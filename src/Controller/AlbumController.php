@@ -17,8 +17,8 @@ use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Symfony\Component\Validator\Constraints\Json;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
-#[Route('/api/artist')]
-class ArtistController extends AbstractController
+#[Route('/api/album')]
+class UserController extends AbstractController
 {
     private $entityManager;
     private $repository;
