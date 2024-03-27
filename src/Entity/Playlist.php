@@ -7,6 +7,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: PlaylistRepository::class)]
 class Playlist
@@ -19,11 +20,12 @@ class Playlist
     // #[ORM\Id]
     #[ORM\Column(length: 90)]
     private ?string $idPlaylist = null;
-
+    #[Groups(["getSongs", "getPlaylist"])]
     #[ORM\Column(length: 50)]
     private ?string $title = null;
 
     #[ORM\Column]
+    #[Groups(["getSongs", "getPlaylist"])]
     private ?bool $public = true;
 
     #[ORM\Column]
@@ -32,11 +34,16 @@ class Playlist
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
     private ?\DateTimeInterface $updateAt = null;
 
+    #[Groups(["getPlaylist"])]
     #[ORM\ManyToOne(inversedBy: 'Playlist_idPlaylist')]
     private ?PlaylistHasSong $playlistHasSong = null;
 
     public function __construct()
-    {}
+    {
+        $this->createAt = new \DateTimeImmutable();
+        $this->updateAt = new \DateTimeImmutable();
+
+    }
 
     public function getId(): ?int
     {

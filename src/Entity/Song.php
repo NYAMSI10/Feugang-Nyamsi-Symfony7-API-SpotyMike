@@ -6,6 +6,7 @@ use App\Repository\SongRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: SongRepository::class)]
 class Song
@@ -15,15 +16,18 @@ class Song
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\Column(length: 90)]
+    #[Groups(["getSongs"])]
+    #[ORM\Column(length: 90,unique: true)]
     private ?string $idSong = null;
 
+    #[Groups(["getSongs"])]
     #[ORM\Column(length: 255)]
     private ?string $title = null;
-
+    #[Groups(["getSongs"])]
     #[ORM\Column(length: 125)]
     private ?string $url = null;
 
+    #[Groups(["getSongs"])]
     #[ORM\Column(length: 125)]
     private ?string $cover = null;
 
@@ -33,18 +37,22 @@ class Song
     #[ORM\Column]
     private ?\DateTimeImmutable $createAt = null;
 
+    #[Groups(["getSongs"])]
     #[ORM\ManyToMany(targetEntity: Artist::class, inversedBy: 'songs')]
     private Collection $Artist_idUser;
 
+    #[Groups(["getSongs"])]
     #[ORM\ManyToOne(inversedBy: 'song_idSong')]
     private ?Album $album = null;
 
+    #[Groups(["getSongs"])]
     #[ORM\ManyToOne(inversedBy: 'Song_idSong')]
     private ?PlaylistHasSong $playlistHasSong = null;
 
     public function __construct()
     {
         $this->Artist_idUser = new ArrayCollection();
+        $this->createAt = new \DateTimeImmutable();
     }
 
     public function getId(): ?int

@@ -7,6 +7,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: PlaylistHasSongRepository::class)]
 class PlaylistHasSong
@@ -14,18 +15,20 @@ class PlaylistHasSong
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
+    #[Groups(["getSongs","getPlaylist"])]
     private ?int $id = null;
 
     #[ORM\OneToMany(targetEntity: Playlist::class, mappedBy: 'playlistHasSong')]
     private Collection $Playlist_idPlaylist;
-
     #[ORM\OneToMany(targetEntity: Song::class, mappedBy: 'playlistHasSong')]
     private Collection $Song_idSong;
 
     #[ORM\Column(nullable: true)]
+    #[Groups(["getSongs","getPlaylist"])]
     private ?bool $download = null;
 
     #[ORM\Column(type: Types::SMALLINT, nullable: true)]
+    #[Groups(["getSongs","getPlaylist"])]
     private ?int $position = null;
 
     #[ORM\Column]
@@ -35,6 +38,8 @@ class PlaylistHasSong
     {
         $this->Playlist_idPlaylist = new ArrayCollection();
         $this->Song_idSong = new ArrayCollection();
+        $this->createAt = new \DateTimeImmutable();
+
     }
 
     public function getId(): ?int
