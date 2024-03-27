@@ -7,6 +7,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: ArtistRepository::class)]
 class Artist
@@ -20,12 +21,15 @@ class Artist
     #[ORM\JoinColumn(nullable: false)]
     private ?User $User_idUser = null;
 
+    #[Groups(["getSongs"])]
     #[ORM\Column(length: 90)]
     private ?string $fullname = null;
 
+    #[Groups(["getSongs"])]
     #[ORM\Column(length: 90)]
     private ?string $label = null;
 
+    #[Groups(["getSongs"])]
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $description = null;
 

@@ -6,6 +6,7 @@ use App\Repository\AlbumRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: AlbumRepository::class)]
 class Album
@@ -15,19 +16,25 @@ class Album
     #[ORM\Column]
     private ?int $id = null;
 
+    #[Groups(["getSongs"])]
     #[ORM\Column(length: 90)]
     private ?string $idAlbum = null;
 
     #[ORM\Column(length: 90)]
+    #[Groups(["getSongs"])]
     private ?string $nom = null;
 
     #[ORM\Column(length: 20)]
+    #[Groups(["getSongs"])]
     private ?string $categ = null;
 
+
     #[ORM\Column(length: 125)]
+    #[Groups(["getSongs"])]
     private ?string $cover = null;
 
     #[ORM\Column]
+    #[Groups(["getSongs"])]
     private ?int $year = 2024;
 
     #[ORM\ManyToOne(inversedBy: 'albums')]
