@@ -38,9 +38,7 @@ class UserController extends AbstractController
     {
         $users = $this->repository->findAll();
 
-        $data = $this->serializer->serialize($users, 'json', [
-            AbstractNormalizer::IGNORED_ATTRIBUTES => ['id'],
-        ]);
+        $data = $this->serializer->serialize($users, 'json');
         return new JsonResponse($data, Response::HTTP_OK, [], true);
 
     }
@@ -83,9 +81,7 @@ class UserController extends AbstractController
     {
         //$user = $this->repository->find($request->get('id'));
 
-        $data = $this->serializer->serialize($user, 'json', [
-            AbstractNormalizer::IGNORED_ATTRIBUTES => ['id'],
-        ]);
+        $data = $this->serializer->serialize($user, 'json');
         
         return new JsonResponse($data, Response::HTTP_OK, [], true);
     }
@@ -108,9 +104,7 @@ class UserController extends AbstractController
         $this->entityManager->persist($user);
         $this->entityManager->flush();
         
-        $data = $this->serializer->serialize($user, 'json', [
-            AbstractNormalizer::IGNORED_ATTRIBUTES => ['id'],
-        ]);
+        $data = $this->serializer->serialize($user, 'json');
         
         return new JsonResponse($data, Response::HTTP_OK, [], true);
     }
@@ -121,9 +115,7 @@ class UserController extends AbstractController
         
         $this->entityManager->remove($user);
         $this->entityManager->flush();
-        $data = $this->serializer->serialize($user, 'json', [
-            AbstractNormalizer::IGNORED_ATTRIBUTES => ['id'],
-        ]);
+        $data = $this->serializer->serialize($user, 'json');
 
         return new JsonResponse($data, Response::HTTP_OK, [], true);
     }
