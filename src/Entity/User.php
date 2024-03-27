@@ -5,9 +5,10 @@ namespace App\Entity;
 use App\Repository\UserRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
-class User
+class User 
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -15,13 +16,15 @@ class User
     private ?int $id = null;
 
     // #[ORM\Id]
-    #[ORM\Column(length: 90)]
+    #[ORM\Column(length: 90, unique: true)]
     private ?string $idUser = null;
 
     #[ORM\Column(length: 55)]
     private ?string $name = null;
 
-    #[ORM\Column(length: 80)]
+    #[ORM\Column(length: 80, unique: true)]
+    #[Assert\Email]
+    #[Assert\Unique(message: 'This email already exists, Please change')]
     private ?string $email = null;
 
     #[ORM\Column(length: 90)]
@@ -38,6 +41,13 @@ class User
 
     #[ORM\OneToOne(mappedBy: 'User_idUser', cascade: ['persist', 'remove'])]
     private ?Artist $artist = null;
+
+    public function __construct()
+    {
+        $this->updateAt = new \DateTimeImmutable();
+        $this->createAt = new \DateTimeImmutable();
+        $this->idUser = random_bytes(10);
+    }
 
     public function getId(): ?int
     {
