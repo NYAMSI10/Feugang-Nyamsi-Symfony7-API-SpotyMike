@@ -81,14 +81,15 @@ class ArtistController extends AbstractController
         try {
             $this->entityManager->persist($artist);
             $this->entityManager->flush();
+            return $this->json([
+                'message' => 'Artist created successfully',
+                'data' =>  $artist->jsonSerialize()
+                ],Response::HTTP_CREATED);
         }  catch (\Exception $e) {
             return $this->json(['errors' => $e->getMessage(),'message' => 'An error occurred'], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
         
-        return $this->json([
-            'message' => 'Artist created successfully',
-            'data' =>  $artist->jsonSerialize()
-            ],Response::HTTP_CREATED);
+        
     }
 
     #[Route('/{id}', name: 'artist_show', methods: ['GET'])]
@@ -109,9 +110,12 @@ class ArtistController extends AbstractController
         $artist->setLabel($data_received['label']?$data_received['fullname']:$artist->getLabel());
         $artist->setDescription($data_received['description']);
         
-
-        $this->entityManager->persist($artist);
-        $this->entityManager->flush();
+        try {
+            $this->entityManager->persist($artist);
+            $this->entityManager->flush();
+        }  catch (\Exception $e) {
+            return $this->json(['errors' => $e->getMessage(),'message' => 'An error occurred'], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
         
         return $this->json([
             'message' => 'Artist modified successfully',

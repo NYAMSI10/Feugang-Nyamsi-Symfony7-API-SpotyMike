@@ -130,14 +130,18 @@ class AlbumController extends AbstractController
         $album->setCover(isset($data_received['cover'])?$data_received['cover']:$album->getCover());
         $album->setYear(isset($data_received['year'])?$data_received['year']:date('Y'));
         
-
+    try {
         $this->entityManager->persist($album);
         $this->entityManager->flush();
-        
         return $this->json([
             'message' => 'Album modified successfully',
             'data' =>  $album->jsonSerialize()
             ],Response::HTTP_OK);
+    }  catch (\Exception $e) {
+        return $this->json(['errors' => $e->getMessage(),'message' => 'An error occurred'], Response::HTTP_INTERNAL_SERVER_ERROR);
+    }
+        
+       
     }
 
     #[Route('/{id}', name: 'album_delete', methods: ['DELETE'])]

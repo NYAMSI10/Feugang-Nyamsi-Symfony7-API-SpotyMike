@@ -88,6 +88,10 @@ class UserController extends AbstractController
         try {
             $this->entityManager->persist($user);
             $this->entityManager->flush();
+            return $this->json([
+                'message' => 'User created successefully',
+                'data' =>  $user->jsonSerialize()
+                ],Response::HTTP_CREATED);
         } catch (\Doctrine\DBAL\Exception\UniqueConstraintViolationException $e) {
             return $this->json(['errors' => $e->getMessage(),'message' => 'Duplicate key error occurred'], Response::HTTP_BAD_REQUEST);
         } catch (\Exception $e) {
@@ -95,10 +99,7 @@ class UserController extends AbstractController
         }
         
        
-        return $this->json([
-            'message' => 'User created successefully',
-            'data' =>  $user->jsonSerialize()
-            ],Response::HTTP_CREATED);
+       
     }
 
     #[Route('/edit/{id}', name: 'user_edit', methods: ['POST','PUT'])]
@@ -116,15 +117,20 @@ class UserController extends AbstractController
             $user->setEncrypte($hashedPassword);
         }
      
-
-        $this->entityManager->persist($user);
-        $this->entityManager->flush();
+        try {
+            $this->entityManager->persist($user);
+            $this->entityManager->flush();
+            return $this->json([
+                'message' => 'User modified successefully',
+                'data' =>  $user->jsonSerialize()
+                ],Response::HTTP_OK);
+        } catch (\Doctrine\DBAL\Exception\UniqueConstraintViolationException $e) {
+            return $this->json(['errors' => $e->getMessage(),'message' => 'Duplicate key error occurred'], Response::HTTP_BAD_REQUEST);
+        } catch (\Exception $e) {
+            return $this->json(['errors' => $e->getMessage(),'message' => 'An error occurred'], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
         
         
-        return $this->json([
-            'message' => 'User modified successefully',
-            'data' =>  $user->jsonSerialize()
-            ],Response::HTTP_OK);
     }
 
     #[Route('/{id}', name: 'user_delete', methods: ['DELETE'])]
