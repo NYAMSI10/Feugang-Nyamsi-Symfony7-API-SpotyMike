@@ -40,6 +40,10 @@ class Album implements JsonSerializable
 
     #[ORM\Column]
     #[Groups(["getSongs"])]
+    #[Assert\Type(
+        type: 'integer',
+        message: 'The value {{ value }} is not a valid {{ type }}.',
+    )]
     private ?int $year = 2024;
 
     #[ORM\ManyToOne(inversedBy: 'albums')]

@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\Artist;
 use App\Entity\Album;
+use App\Entity\User;
 use Doctrine\ORM\EntityManager;
 use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
@@ -55,7 +56,7 @@ class AlbumController extends AbstractController
     {
         $data_received = $request->request->all();
 
-        if(!isset($data_received['User_idUser'])) {
+        if(!isset($data_received['artist_User_idUser'])) {
             return $this->json([
                 'message' => 'Please choose an artist',
             ]);
@@ -63,26 +64,33 @@ class AlbumController extends AbstractController
 
 
         $album = new Album();
+        $user = $this->entityManager->getRepository(User::class)->find($data_received['artist_User_idUser']);
+        $artist = $this->entityManager->getRepository(Artist::class)->findBy(['User_idUser' => $user]);
 
-        $artist = $this->entityManager->getRepository(Artist::class)->find($data_received['User_idUser']);
-        $album->setArtistUserIdUser($artist);
-        $album->setIdAlbum(md5(uniqid($data_received['nom'].'-'.$data_received['categ'], true)));
-        $album->setNom($data_received['nom']);
-        $album->setCateg($data_received['categ']);
-        $album->setCover($data_received['cover']);
-        $album->setYear($data_received['year']);
+        if($artist) {
+            $album->setArtistUserIdUser($artist[0]);
+            $album->setIdAlbum(md5(uniqid($data_received['nom'].'-'.$data_received['categ'], true)));
+            $album->setNom($data_received['nom']);
+            $album->setCateg($data_received['categ']);
+            $album->setCover($data_received['cover']);
+            $album->setYear($data_received['year']);
 
-        $errors = $this->validator->validate($album);
-        if (count($errors) > 0) {
-            $errorMessages = [];
-            foreach ($errors as $error) {
-                $errorMessages[] = $error->getMessage();
+            $errors = $this->validator->validate($album);
+            if (count($errors) > 0) {
+                $errorMessages = [];
+                foreach ($errors as $error) {
+                    $errorMessages[] = $error->getMessage();
+                }
+                return $this->json(['errors' => $errorMessages], Response::HTTP_BAD_REQUEST);
             }
-            return $this->json(['errors' => $errorMessages], Response::HTTP_BAD_REQUEST);
+            
+            $this->entityManager->persist($album);
+            $this->entityManager->flush();
+        } else {
+            return $this->json([
+                'message' => 'Please choose a valid artist',
+            ]);
         }
-        
-        $this->entityManager->persist($album);
-        $this->entityManager->flush();
         
         return $this->json([
             'message' => 'Album created successfully',
