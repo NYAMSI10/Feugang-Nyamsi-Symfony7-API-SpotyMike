@@ -8,6 +8,7 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use JsonSerializable;
 use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: AlbumRepository::class)]
 class Album implements JsonSerializable
@@ -17,6 +18,7 @@ class Album implements JsonSerializable
     #[ORM\Column]
     private ?int $id = null;
 
+    #[Groups(["getSongs"])]
     #[ORM\Column(length: 90)]
     private ?string $idAlbum = null;
 
@@ -28,12 +30,16 @@ class Album implements JsonSerializable
     #[ORM\Column(length: 20)]
     #[Assert\NotBlank(message: 'The category must not be empty')]
     #[Assert\NotNull(message: 'The category must not be null')]
+    #[Groups(["getSongs"])]
     private ?string $categ = null;
 
+
     #[ORM\Column(length: 125)]
+    #[Groups(["getSongs"])]
     private ?string $cover = null;
 
     #[ORM\Column]
+    #[Groups(["getSongs"])]
     private ?int $year = 2024;
 
     #[ORM\ManyToOne(inversedBy: 'albums')]

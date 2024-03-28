@@ -9,6 +9,8 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use JsonSerializable;
 use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Component\Serializer\Annotation\Groups;
+
 
 #[ORM\Entity(repositoryClass: ArtistRepository::class)]
 class Artist implements JsonSerializable
@@ -22,16 +24,19 @@ class Artist implements JsonSerializable
     #[ORM\JoinColumn(nullable: false)]
     private ?User $User_idUser = null;
 
+    #[Groups(["getSongs"])]
     #[ORM\Column(length: 90)]
     #[Assert\NotBlank(message: 'The fullname must not be empty')]
     #[Assert\NotNull(message: 'The fullname must not be null')]
     private ?string $fullname = null;
 
+    #[Groups(["getSongs"])]
     #[ORM\Column(length: 90)]
     #[Assert\NotBlank(message: 'The label must not be empty')]
     #[Assert\NotNull(message: 'The label must not be null')]
     private ?string $label = null;
 
+    #[Groups(["getSongs"])]
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $description = null;
 
