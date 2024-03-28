@@ -38,17 +38,29 @@ class UserController extends AbstractController
     {
         $users = $this->repository->findAll();
 
-        $data = $this->serializer->serialize($users, 'json', [
-            AbstractNormalizer::IGNORED_ATTRIBUTES => ['id'],
-        ]);
-        return new JsonResponse($data, Response::HTTP_OK, [], true);
+        $data = $this->serializer->serialize($users, 'json');
 
+        return $this->json([
+            'message' => 'List of users',
+            'data' =>   $data
+            ],Response::HTTP_OK);
+    }
+
+    #[Route('/{id}', name: 'user_show', methods: ['GET'])]
+    public function show(Request $request,User $user): JsonResponse
+    {
+        return $this->json([
+            'message' => 'User retreive successefully',
+            'data' =>  $user->jsonSerialize()
+            ],Response::HTTP_OK);
     }
 
     #[Route('/new', name: 'user_new', methods: 'POST')]
     public function new(Request $request): JsonResponse
     {
-        $data_received = $request->toArray();
+        
+        $data_received = $request->request->all();
+
         $search = $this->repository->findBy(['email' => $data_received['email']]);
         if($search) {
             return $this->json([
@@ -56,63 +68,58 @@ class UserController extends AbstractController
             ]);
         }
 
-
         $user = new User();
+        $user->setIdUser(md5(uniqid($data_received['email'], true)));
         $user->setName($data_received['name']);
         $user->setEmail($data_received['email']);
         $user->setTel($data_received['tel']);
         
         $hashedPassword = password_hash($data_received['encrypte'], PASSWORD_BCRYPT);
         $user->setEncrypte($hashedPassword);
-        
-        /*$errors = $this->validator->validate($user);
-        
-        if ($errors->count() > 0) {
-            return new JsonResponse($this->serializer->serialize((string)$errors, 'json'), JsonResponse::HTTP_BAD_REQUEST, [], true);
-        }*/
+       
+        $errors = $this->validator->validate($user);
+        if (count($errors) > 0) {
+            $errorMessages = [];
+            foreach ($errors as $error) {
+                $errorMessages[] = $error->getMessage();
+            }
+            return $this->json(['errors' => $errorMessages], Response::HTTP_BAD_REQUEST);
+        }
+
         $this->entityManager->persist($user);
         $this->entityManager->flush();
-        
-        $data = $this->serializer->serialize($user, 'json');
-        
-        return new JsonResponse($data, Response::HTTP_CREATED, [], true);
+      
+       return $this->json([
+        'message' => 'User created successefully',
+        'data' =>  $user->jsonSerialize()
+        ],Response::HTTP_CREATED);
     }
 
-    #[Route('/{id}', name: 'user_show', methods: ['GET'])]
-    public function show(Request $request,User $user): JsonResponse
-    {
-        //$user = $this->repository->find($request->get('id'));
+    
 
-        $data = $this->serializer->serialize($user, 'json', [
-            AbstractNormalizer::IGNORED_ATTRIBUTES => ['id'],
-        ]);
-        
-        return new JsonResponse($data, Response::HTTP_OK, [], true);
-    }
-
-    #[Route('/edit/{id}', name: 'app_user_edit', methods: ['POST','PUT'])]
+    #[Route('/edit/{id}', name: 'user_edit', methods: ['POST','PUT'])]
     public function edit(Request $request,User $user): JsonResponse
     {
-        $data_received = $request->toArray();
+        $data_received = $request->request->all();
 
-        $user->setName($data_received['name']);
-        $user->setEmail($data_received['email']);
+        $user->setName(empty($data_received['name'])?$user->getName():$data_received['name']);
+        $user->setEmail(empty($data_received['email'])?$user->getEmail():$data_received['email']);
         $user->setTel($data_received['tel']);
 
         if(isset($data_received['encrypte'])) {
             $hashedPassword = password_hash($data_received['encrypte'], PASSWORD_BCRYPT);
             $user->setEncrypte($hashedPassword);
         }
-        
+     
 
         $this->entityManager->persist($user);
         $this->entityManager->flush();
         
-        $data = $this->serializer->serialize($user, 'json', [
-            AbstractNormalizer::IGNORED_ATTRIBUTES => ['id'],
-        ]);
         
-        return new JsonResponse($data, Response::HTTP_OK, [], true);
+        return $this->json([
+            'message' => 'User modified successefully',
+            'data' =>  $user->jsonSerialize()
+            ],Response::HTTP_OK);
     }
 
     #[Route('/{id}', name: 'user_delete', methods: ['DELETE'])]
@@ -121,10 +128,10 @@ class UserController extends AbstractController
         
         $this->entityManager->remove($user);
         $this->entityManager->flush();
-        $data = $this->serializer->serialize($user, 'json', [
-            AbstractNormalizer::IGNORED_ATTRIBUTES => ['id'],
-        ]);
 
-        return new JsonResponse($data, Response::HTTP_OK, [], true);
+        return $this->json([
+            'message' => 'User deleted successefully',
+            'data' =>  $user->jsonSerialize()
+            ],Response::HTTP_OK);
     }
 }
