@@ -97,23 +97,6 @@ class UserController extends AbstractController
         return new JsonResponse($data, Response::HTTP_CREATED, [], true);
     }
 
-    #[Route('/{id}', name: 'user_show', methods: ['GET'])]
-    public function show(Request $request,User $user): JsonResponse
-    {
-        //$user = $this->repository->find($request->get('id'));
-
-        $data = $this->serializer->serialize($user, 'json');
-        
-        return new JsonResponse($data, Response::HTTP_OK, [], true);
-      
-       return $this->json([
-        'message' => 'User created successefully',
-        'data' =>  $user->jsonSerialize()
-        ],Response::HTTP_CREATED);
-    }
-
-    
-
     #[Route('/edit/{id}', name: 'user_edit', methods: ['POST','PUT'])]
     public function edit(Request $request,User $user): JsonResponse
     {
