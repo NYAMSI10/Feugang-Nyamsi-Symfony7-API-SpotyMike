@@ -6,9 +6,11 @@ use App\Repository\AlbumRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use JsonSerializable;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: AlbumRepository::class)]
-class Album
+class Album implements JsonSerializable
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -19,9 +21,13 @@ class Album
     private ?string $idAlbum = null;
 
     #[ORM\Column(length: 90)]
+    #[Assert\NotBlank(message: 'The name must not be empty')]
+    #[Assert\NotNull(message: 'The name must not be null')]
     private ?string $nom = null;
 
     #[ORM\Column(length: 20)]
+    #[Assert\NotBlank(message: 'The category must not be empty')]
+    #[Assert\NotNull(message: 'The category must not be null')]
     private ?string $categ = null;
 
     #[ORM\Column(length: 125)]
@@ -146,5 +152,19 @@ class Album
         }
 
         return $this;
+    }
+
+    public function jsonSerialize() {
+        return [
+            "id" => $this->getId(),
+            "idAlbum" => $this->getIdAlbum(),
+            "artist" => $this->getArtistUserIdUser(),
+            "nom" => $this->getNom(),
+            "categ" => $this->getCateg(),
+            "cover" => $this->getCover(),
+            "year" => $this->getYear(),
+            "songs" => $this->getSongIdSong()->toArray(),
+            
+        ];
     }
 }

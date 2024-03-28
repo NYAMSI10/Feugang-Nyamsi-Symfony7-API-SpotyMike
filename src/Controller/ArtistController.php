@@ -70,7 +70,7 @@ class ArtistController extends AbstractController
         $artist->setLabel($data_received['label']);
         $artist->setDescription($data_received['description']);
 
-        $errors = $this->validator->validate($user);
+        $errors = $this->validator->validate($artist);
         if (count($errors) > 0) {
             $errorMessages = [];
             foreach ($errors as $error) {
@@ -102,8 +102,8 @@ class ArtistController extends AbstractController
     {
         $data_received = $request->toArray();
 
-        $artist->setFullname($data_received['fullname']?$artist->getFullname():$data_received['fullname']);
-        $artist->setLabel($data_received['label']?$artist->getLabel():$data_received['fullname']);
+        $artist->setFullname($data_received['fullname']?$data_received['fullname']:$artist->getFullname());
+        $artist->setLabel($data_received['label']?$data_received['fullname']:$artist->getLabel());
         $artist->setDescription($data_received['description']);
         
 
@@ -111,7 +111,7 @@ class ArtistController extends AbstractController
         $this->entityManager->flush();
         
         return $this->json([
-            'message' => 'User modified successfully',
+            'message' => 'Artist modified successfully',
             'data' =>  $artist->jsonSerialize()
             ],Response::HTTP_OK);
     }
