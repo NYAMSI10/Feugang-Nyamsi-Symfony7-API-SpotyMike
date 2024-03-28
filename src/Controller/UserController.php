@@ -85,9 +85,14 @@ class UserController extends AbstractController
             }
             return $this->json(['errors' => $errorMessages], Response::HTTP_BAD_REQUEST);
         }
-
-        $this->entityManager->persist($user);
-        $this->entityManager->flush();
+        try {
+            $this->entityManager->persist($user);
+            $this->entityManager->flush();
+        } catch (\Doctrine\DBAL\Exception\UniqueConstraintViolationException $e) {
+            return $this->json(['errors' => $e->getMessage(),'message' => 'Duplicate key error occurred'], Response::HTTP_BAD_REQUEST);
+        } catch (\Exception $e) {
+            return $this->json(['errors' => $e->getMessage(),'message' => 'An error occurred'], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
         
        
         return $this->json([

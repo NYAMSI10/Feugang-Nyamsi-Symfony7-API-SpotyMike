@@ -73,6 +73,13 @@ class AlbumController extends AbstractController
             $album->setNom($data_received['nom']);
             $album->setCateg($data_received['categ']);
             $album->setCover($data_received['cover']);
+
+            
+            if(gettype($data_received['year']) != 'integer')
+                return $this->json([
+                    'message' => 'Please choose a valid  year',
+                ]);
+
             $album->setYear($data_received['year']);
 
             $errors = $this->validator->validate($album);
@@ -83,9 +90,15 @@ class AlbumController extends AbstractController
                 }
                 return $this->json(['errors' => $errorMessages], Response::HTTP_BAD_REQUEST);
             }
+
+            try {
+                $this->entityManager->persist($album);
+                $this->entityManager->flush();
+            }  catch (\Exception $e) {
+                return $this->json(['errors' => $e->getMessage(),'message' => 'An error occurred'], Response::HTTP_INTERNAL_SERVER_ERROR);
+            }
             
-            $this->entityManager->persist($album);
-            $this->entityManager->flush();
+            
         } else {
             return $this->json([
                 'message' => 'Please choose a valid artist',

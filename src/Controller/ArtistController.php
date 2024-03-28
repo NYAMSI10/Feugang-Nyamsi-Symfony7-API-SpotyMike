@@ -78,9 +78,12 @@ class ArtistController extends AbstractController
             }
             return $this->json(['errors' => $errorMessages], Response::HTTP_BAD_REQUEST);
         }
-        
-        $this->entityManager->persist($artist);
-        $this->entityManager->flush();
+        try {
+            $this->entityManager->persist($artist);
+            $this->entityManager->flush();
+        }  catch (\Exception $e) {
+            return $this->json(['errors' => $e->getMessage(),'message' => 'An error occurred'], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
         
         return $this->json([
             'message' => 'Artist created successfully',
