@@ -170,7 +170,7 @@ class Artist implements JsonSerializable
             "label" => $this->getLabel(),
             "description" => $this->getDescription(),
             "albums" => $this->getAlbums()->toArray(),
-            
+            "songs" => $this->getSongs()->toArray()
         ];
     }
 }

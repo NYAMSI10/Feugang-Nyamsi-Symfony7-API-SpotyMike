@@ -104,6 +104,7 @@ class UserController extends AbstractController
         $user->setName(empty($data_received['name'])?$user->getName():$data_received['name']);
         $user->setEmail(empty($data_received['email'])?$user->getEmail():$data_received['email']);
         $user->setTel($data_received['tel']);
+        $user->setUpdateAt(new \DateTimeImmutable());
 
         if(isset($data_received['encrypte'])) {
             $hashedPassword = password_hash($data_received['encrypte'], PASSWORD_BCRYPT);
