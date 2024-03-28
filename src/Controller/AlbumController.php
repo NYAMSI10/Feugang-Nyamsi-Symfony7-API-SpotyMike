@@ -73,13 +73,6 @@ class AlbumController extends AbstractController
             $album->setNom($data_received['nom']);
             $album->setCateg($data_received['categ']);
             $album->setCover($data_received['cover']);
-
-            
-            if(gettype($data_received['year']) != 'integer')
-                return $this->json([
-                    'message' => 'Please choose a valid  year',
-                ]);
-
             $album->setYear($data_received['year']);
 
             $errors = $this->validator->validate($album);

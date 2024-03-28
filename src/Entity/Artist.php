@@ -162,6 +162,24 @@ class Artist implements JsonSerializable
         return $this;
     }
 
+    private function serializeAlbums()
+    {
+        $albumIds = [];
+        foreach ($this->getAlbums() as $album) {
+            $albumIds[] = $album->getId(); // Assuming getId() returns the ID of the album
+        }
+        return $albumIds;
+    }
+
+    private function serializeSongs()
+    {
+        $songIds = [];
+        foreach ($this->getSongs() as $song) {
+            $songIds[] = $song->getId(); // Assuming getId() returns the ID of the album
+        }
+        return $songIds;
+    }
+
     public function jsonSerialize() {
         return [
             "id" => $this->getId(),
@@ -169,8 +187,8 @@ class Artist implements JsonSerializable
             "fullname" => $this->getFullname(),
             "label" => $this->getLabel(),
             "description" => $this->getDescription(),
-            "albums" => $this->getAlbums()->toArray(),
-            "songs" => $this->getSongs()->toArray()
+            "albums" => $this->serializeAlbums(),
+            "songs" => $this->serializeSongs()
         ];
     }
 }
