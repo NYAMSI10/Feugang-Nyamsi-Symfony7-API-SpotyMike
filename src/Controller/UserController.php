@@ -39,9 +39,6 @@ class UserController extends AbstractController
         $users = $this->repository->findAll();
 
         $data = $this->serializer->serialize($users, 'json');
-        return new JsonResponse($data, Response::HTTP_OK, [], true);
-
-        $data = $this->serializer->serialize($users, 'json');
 
         return $this->json([
             'message' => 'List of users',
@@ -92,9 +89,11 @@ class UserController extends AbstractController
         $this->entityManager->persist($user);
         $this->entityManager->flush();
         
-        $data = $this->serializer->serialize($user, 'json');
-        
-        return new JsonResponse($data, Response::HTTP_CREATED, [], true);
+       
+        return $this->json([
+            'message' => 'User created successefully',
+            'data' =>  $user->jsonSerialize()
+            ],Response::HTTP_CREATED);
     }
 
     #[Route('/edit/{id}', name: 'user_edit', methods: ['POST','PUT'])]

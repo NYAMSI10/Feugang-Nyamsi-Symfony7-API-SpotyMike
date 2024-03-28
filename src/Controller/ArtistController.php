@@ -43,13 +43,24 @@ class ArtistController extends AbstractController
             AbstractNormalizer::IGNORED_ATTRIBUTES => ['id'],
         ]);
         return new JsonResponse($data, Response::HTTP_OK, [], true);
+        return $this->json([
+            'message' => 'List of artists',
+            'data' =>   $data
+            ],Response::HTTP_OK);
 
     }
 
     #[Route('/new', name: 'artist_new', methods: 'POST')]
     public function new(Request $request): JsonResponse
     {
-        $data_received = $request->toArray();
+        $data_received = $request->request->all();
+
+        if(!isset($data_received['User_idUser'])) {
+            return $this->json([
+                'message' => 'Please choose a user',
+            ]);
+        }
+
 
         $artist = new Artist();
 
@@ -58,25 +69,32 @@ class ArtistController extends AbstractController
         $artist->setFullname($data_received['fullname']);
         $artist->setLabel($data_received['label']);
         $artist->setDescription($data_received['description']);
+
+        $errors = $this->validator->validate($user);
+        if (count($errors) > 0) {
+            $errorMessages = [];
+            foreach ($errors as $error) {
+                $errorMessages[] = $error->getMessage();
+            }
+            return $this->json(['errors' => $errorMessages], Response::HTTP_BAD_REQUEST);
+        }
         
         $this->entityManager->persist($artist);
         $this->entityManager->flush();
         
-        $data = $this->serializer->serialize($artist, 'json');
-        
-        return new JsonResponse($data, Response::HTTP_CREATED, [], true);
+        return $this->json([
+            'message' => 'Artist created successfully',
+            'data' =>  $artist->jsonSerialize()
+            ],Response::HTTP_CREATED);
     }
 
     #[Route('/{id}', name: 'artist_show', methods: ['GET'])]
     public function show(Request $request,Artist $artist): JsonResponse
     {
-        //$user = $this->repository->find($request->get('id'));
-
-        $data = $this->serializer->serialize($artist, 'json', [
-            AbstractNormalizer::IGNORED_ATTRIBUTES => ['id'],
-        ]);
-        
-        return new JsonResponse($data, Response::HTTP_OK, [], true);
+        return $this->json([
+            'message' => 'Artist retreive successfully',
+            'data' =>  $artist->jsonSerialize()
+            ],Response::HTTP_OK);
     }
 
     #[Route('/edit/{id}', name: 'artist_edit', methods: ['POST','PUT'])]
@@ -84,17 +102,18 @@ class ArtistController extends AbstractController
     {
         $data_received = $request->toArray();
 
-        $artist->setFullname($data_received['fullname']);
-        $artist->setLabel($data_received['label']);
+        $artist->setFullname($data_received['fullname']?$artist->getFullname():$data_received['fullname']);
+        $artist->setLabel($data_received['label']?$artist->getLabel():$data_received['fullname']);
         $artist->setDescription($data_received['description']);
         
 
         $this->entityManager->persist($artist);
         $this->entityManager->flush();
         
-        $data = $this->serializer->serialize($artist, 'json');
-        
-        return new JsonResponse($data, Response::HTTP_OK, [], true);
+        return $this->json([
+            'message' => 'User modified successfully',
+            'data' =>  $artist->jsonSerialize()
+            ],Response::HTTP_OK);
     }
 
     #[Route('/{id}', name: 'artist_delete', methods: ['DELETE'])]
@@ -105,6 +124,9 @@ class ArtistController extends AbstractController
         $this->entityManager->flush();
         $data = $this->serializer->serialize($artist, 'json');
 
-        return new JsonResponse($data, Response::HTTP_OK, [], true);
+        return $this->json([
+            'message' => 'Artist deleted successfully',
+            'data' =>  $artist->jsonSerialize()
+            ],Response::HTTP_OK);
     }
 }
