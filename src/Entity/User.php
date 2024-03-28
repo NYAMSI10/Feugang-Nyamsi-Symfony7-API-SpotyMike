@@ -5,9 +5,12 @@ namespace App\Entity;
 use App\Repository\UserRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use JsonSerializable;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
-class User
+
+class User implements JsonSerializable
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -19,12 +22,19 @@ class User
     private ?string $idUser = null;
 
     #[ORM\Column(length: 55)]
+    #[Assert\NotBlank(message: 'The name must not be empty')]
+    #[Assert\NotNull(message: 'The name must not be null')]
     private ?string $name = null;
 
     #[ORM\Column(length: 80)]
+    #[Assert\NotBlank(message: 'The email must not be empty')]
+    #[Assert\NotNull(message: 'The email must not be null')]
+    #[Assert\Email(message: 'This email is not valid, Please change')]
     private ?string $email = null;
 
     #[ORM\Column(length: 90)]
+    #[Assert\NotBlank(message: 'The password must not be empty')]
+    #[Assert\NotNull(message: 'The password must not be null')]
     private ?string $encrypte = null;
 
     #[ORM\Column(length: 15, nullable: true)]
@@ -38,6 +48,13 @@ class User
 
     #[ORM\OneToOne(mappedBy: 'User_idUser', cascade: ['persist', 'remove'])]
     private ?Artist $artist = null;
+
+    public function __construct()
+    {
+        $this->updateAt = new \DateTimeImmutable();
+        $this->createAt = new \DateTimeImmutable();
+        //$this->idUser = random_bytes(10);
+    }
 
     public function getId(): ?int
     {
@@ -143,5 +160,17 @@ class User
         $this->artist = $artist;
 
         return $this;
+    }
+
+    public function jsonSerialize() {
+        return [
+            "id" => $this->getId(),
+            "idUser" => $this->getIdUser(),
+            "name" => $this->getName(),
+            "email" => $this->getEmail(),
+            "createAt" => $this->getCreateAt(),
+            "updateAt" => $this->getUpdateAt(),
+            
+        ];
     }
 }

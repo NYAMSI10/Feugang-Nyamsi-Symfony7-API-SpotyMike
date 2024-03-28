@@ -7,10 +7,13 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use JsonSerializable;
+use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Serializer\Annotation\Groups;
 
+
 #[ORM\Entity(repositoryClass: ArtistRepository::class)]
-class Artist
+class Artist implements JsonSerializable
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -23,10 +26,14 @@ class Artist
 
     #[Groups(["getSongs"])]
     #[ORM\Column(length: 90)]
+    #[Assert\NotBlank(message: 'The fullname must not be empty')]
+    #[Assert\NotNull(message: 'The fullname must not be null')]
     private ?string $fullname = null;
 
     #[Groups(["getSongs"])]
     #[ORM\Column(length: 90)]
+    #[Assert\NotBlank(message: 'The label must not be empty')]
+    #[Assert\NotNull(message: 'The label must not be null')]
     private ?string $label = null;
 
     #[Groups(["getSongs"])]
@@ -153,5 +160,17 @@ class Artist
         }
 
         return $this;
+    }
+
+    public function jsonSerialize() {
+        return [
+            "id" => $this->getId(),
+            "user" => $this->getUserIdUser(),
+            "fullname" => $this->getFullname(),
+            "label" => $this->getLabel(),
+            "description" => $this->getDescription(),
+            "albums" => $this->getAlbums()->toArray(),
+            
+        ];
     }
 }
