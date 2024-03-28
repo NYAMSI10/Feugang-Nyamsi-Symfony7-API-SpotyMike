@@ -6,6 +6,7 @@ use App\Entity\Song;
 use App\Repository\AlbumRepository;
 use App\Repository\ArtistRepository;
 use App\Repository\PlaylistHasSongRepository;
+use App\Service\GenerateId;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -27,7 +28,6 @@ class SongController extends AbstractController
     {
         $this->entityManager = $entityManager;
         $this->repository = $entityManager->getRepository(Song::class);
-
     }
 
     #[Route('/songs', name: 'app_all_song', methods: ['GET'])]
@@ -47,11 +47,11 @@ class SongController extends AbstractController
         return new JsonResponse($jsonSongList, Response::HTTP_OK, [], true);
     }
 
-    #[Route('/song/create', name: 'app_create_song', methods: ['POST'])]
-    public function create(Request $request, SerializerInterface $serializerInterface, ValidatorInterface $validator, AlbumRepository $albumRepository, PlaylistHasSongRepository $playlistHasSongRepository, ArtistRepository $artistRepository): JsonResponse
+    #[Route('/song', name: 'app_create_song', methods: ['POST'])]
+    public function create(Request $request, SerializerInterface $serializerInterface, AlbumRepository $albumRepository, PlaylistHasSongRepository $playlistHasSongRepository, ArtistRepository $artistRepository, GenerateId $generateId): JsonResponse
     {
         $song = new Song();
-        $song->setIdSong($request->get('idsong'))
+        $song->setIdSong($generateId->randId())
             ->setTitle($request->get('title'))
             ->setUrl($request->get('url'))
             ->setCover($request->get('cover'))
@@ -66,11 +66,10 @@ class SongController extends AbstractController
         $jsonSongList = $serializerInterface->serialize($song, 'json', ['groups' => 'getSongs']);
 
         return new JsonResponse($jsonSongList, Response::HTTP_CREATED, [], true);
-
     }
 
     #[Route('/song/{id}', name: 'app_update_song', methods: ['PUT'])]
-    public function update(Request $request, Song $song, SerializerInterface $serializerInterface, ValidatorInterface $validator, AlbumRepository $albumRepository, PlaylistHasSongRepository $playlistHasSongRepository, ArtistRepository $artistRepository): JsonResponse
+    public function update(Request $request, Song $song, SerializerInterface $serializerInterface, AlbumRepository $albumRepository, PlaylistHasSongRepository $playlistHasSongRepository, ArtistRepository $artistRepository): JsonResponse
     {
         $song = $this->repository->find($song);
         $song->setTitle($request->get('title'))
@@ -86,7 +85,6 @@ class SongController extends AbstractController
         $jsonSongList = $serializerInterface->serialize($song, 'json', ['groups' => 'getSongs']);
 
         return new JsonResponse($jsonSongList, Response::HTTP_BAD_REQUEST, [], true);
-
     }
 
     #[Route('/song/{id}', name: 'app_delete_song', methods: ['DELETE'])]
@@ -97,6 +95,4 @@ class SongController extends AbstractController
 
         return new JsonResponse(["message" => "Delete Song Success"], Response::HTTP_NOT_FOUND);
     }
-
-
 }

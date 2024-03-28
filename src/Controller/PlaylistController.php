@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\Playlist;
 use App\Repository\PlaylistHasSongRepository;
+use App\Service\GenerateId;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -24,7 +25,6 @@ class PlaylistController extends AbstractController
     {
         $this->entityManager = $entityManager;
         $this->repository = $entityManager->getRepository(Playlist::class);
-
     }
 
     #[Route('/playlists', name: 'app_all_playlist', methods: ['GET'])]
@@ -45,10 +45,10 @@ class PlaylistController extends AbstractController
     }
 
     #[Route('/playlist', name: 'app_create_playlist', methods: ['POST'])]
-    public function create(Request $request, SerializerInterface $serializerInterface, PlaylistHasSongRepository $playlistHasSongRepository): JsonResponse
+    public function create(Request $request, GenerateId $generateId, SerializerInterface $serializerInterface, PlaylistHasSongRepository $playlistHasSongRepository): JsonResponse
     {
         $playlist = new Playlist();
-        $playlist->setIdPlaylist($request->get('idplaylist'))
+        $playlist->setIdPlaylist($generateId->randId())
             ->setTitle($request->get('title'))
             ->setPublic($request->get('public'))
             ->setPlaylistHasSong($playlistHasSongRepository->find($request->get('idplaylisthassong')));
