@@ -60,7 +60,7 @@ class PlaylistController extends AbstractController
         return new JsonResponse($jsonPlaylistList, Response::HTTP_CREATED, [], true);
     }
 
-    #[Route('/playlist/{id}', name: 'app_create_playlist', methods: ['PUT'])]
+    #[Route('/playlist/{id}', name: 'app_edit_playlist', methods: ['PUT'])]
     public function update(Playlist $playlist, Request $request, SerializerInterface $serializerInterface, PlaylistHasSongRepository $playlistHasSongRepository): JsonResponse
     {
         $playlist = $this->repository->find($playlist);
