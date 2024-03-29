@@ -14,6 +14,8 @@ use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
+use Symfony\Component\Serializer\Normalizer\GetSetMethodNormalizer;
+use Symfony\Component\Serializer\Serializer;
 use Symfony\Component\Validator\Constraints\Json;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
@@ -41,12 +43,25 @@ class UserController extends AbstractController
     {
         $users = $this->repository->findAll();
 
-        $data = $this->serializer->serialize($users, 'json', ['groups' => 'getUsers']);
+        $data = $this->serializer->serialize(
+            ['error' => false ,'message' => 'List of users','data' =>   $users], 
+            'json', 
+            [
+                'groups' => 'getUsers',
+                AbstractNormalizer::CALLBACKS => [
+                    'dateBirth' => function ($innerObject, $outerObject, string $attributeName, string $format = null, array $context = []) {
+                        return $innerObject instanceof \DateTimeInterface ? $innerObject->format('d-m-Y') : '';
+                    },
+                    'createAt' => function ($innerObject, $outerObject, string $attributeName, string $format = null, array $context = []) {
+                        return $innerObject instanceof \DateTimeInterface ? $innerObject->format('d-m-Y') : '';
+                    },
+                    'updateAt' => function ($innerObject, $outerObject, string $attributeName, string $format = null, array $context = []) {
+                        return $innerObject instanceof \DateTimeInterface ? $innerObject->format('d-m-Y') : '';
+                    }
+                ]
+        ]); 
 
-        return $this->json([
-            'message' => 'List of users',
-            'data' =>   $data
-            ],Response::HTTP_OK);
+        return new JsonResponse($data, Response::HTTP_OK, [], true);
     }
 
     #[Route('/{id}', name: 'user_show', methods: ['GET'])]
@@ -56,10 +71,25 @@ class UserController extends AbstractController
         if($user)
             {
                 $data = $this->serializer->serialize($user, 'json', ['groups' => 'getUsers']);
-                return $this->json([
-                'message' => 'User retreive successefully',
-                'data' =>  $data
-                ],Response::HTTP_OK);
+                $data = $this->serializer->serialize(
+                    ['error' => false, 'message' => 'User retreive successefully','data' =>   $user], 
+                    'json', 
+                    [
+                        'groups' => 'getUsers',
+                        AbstractNormalizer::CALLBACKS => [
+                            'dateBirth' => function ($innerObject, $outerObject, string $attributeName, string $format = null, array $context = []) {
+                                return $innerObject instanceof \DateTimeInterface ? $innerObject->format('d-m-Y') : '';
+                            },
+                            'createAt' => function ($innerObject, $outerObject, string $attributeName, string $format = null, array $context = []) {
+                                return $innerObject instanceof \DateTimeInterface ? $innerObject->format('d-m-Y') : '';
+                            },
+                            'updateAt' => function ($innerObject, $outerObject, string $attributeName, string $format = null, array $context = []) {
+                                return $innerObject instanceof \DateTimeInterface ? $innerObject->format('d-m-Y') : '';
+                            }
+                        ]
+                ]); 
+
+                return new JsonResponse($data, Response::HTTP_OK, [], true);
             }
         else
             return $this->json([
@@ -82,25 +112,28 @@ class UserController extends AbstractController
         $age = $today->diff($birthdate)->y;
 
         if(!isset($firstname) || !isset($lastname) || !isset($email) || !isset($password) || !isset($dateBirth)) {
-            return $this->json([
-                'error' => true,
-                'message' => 'Une ou plusieurs données obligatoires sont manquantes',
-            ],Response::HTTP_BAD_REQUEST);
+            $data = $this->serializer->serialize(
+                ['error' => true,'message' => "Une ou plusieurs données obligatoires sont manquantes"], 
+                'json'); 
+            
+            return new JsonResponse($data, Response::HTTP_BAD_REQUEST, [], true);
         }
 
         if($age < 12) {
-            return $this->json([
-                'error' => true,
-                'message' => "L'age de l'utilisateur ne permet pas(12 ans)",
-            ],Response::HTTP_NOT_ACCEPTABLE);
+            $data = $this->serializer->serialize(
+                ['error' => true,'message' => "L'age de l'utilisateur ne permet pas(12 ans)"], 
+                'json'); 
+            
+            return new JsonResponse($data, Response::HTTP_NOT_ACCEPTABLE, [], true);
         }
 
         $search = $this->repository->findBy(['email' => $request->get('email')]);
         if($search) {
-            return $this->json([
-                'error' => true,
-                'message' => 'Un compte utilisant cette adresse mail est déjà enregistré',
-            ],Response::HTTP_CONFLICT);
+            $data = $this->serializer->serialize(
+                ['error' => true,'message' => "Un compte utilisant cette adresse mail est déjà enregistré"], 
+                'json'); 
+            
+            return new JsonResponse($data, Response::HTTP_CONFLICT, [], true);
         }
         try {
             $user = new User();
@@ -122,25 +155,43 @@ class UserController extends AbstractController
                 foreach ($errors as $error) {
                     $errorMessages[] = $error->getMessage();
                 }
-                return $this->json([
-                    'error'=> true,
-                    'message' => "Une ou plusieurs données sont erronées",
-                    'data' => $errorMessages], Response::HTTP_BAD_REQUEST);
+                
+                $data = $this->serializer->serialize(
+                    ['error' => true,'message' => "Une ou plusieurs données sont erronées",'data' => $errorMessages], 
+                    'json'); 
+                
+                return new JsonResponse($data, Response::HTTP_BAD_REQUEST, [], true);
             }
         
             $this->entityManager->persist($user);
             $this->entityManager->flush();
 
-            return $this->json([
-                'error' => false,
-                'message' => "L'utilisateur a bien été créé avec succès",
-                'user' =>  $this->serializer->serialize($user, 'json', ['groups' => 'getUsers'])
-                ],Response::HTTP_CREATED);
+            $data = $this->serializer->serialize(
+                ['error' => false, 'message' => "L'utilisateur a bien été créé avec succès",'user' =>   $user], 
+                'json', 
+                [
+                    'groups' => 'getUsers',
+                    AbstractNormalizer::CALLBACKS => [
+                        'dateBirth' => function ($innerObject, $outerObject, string $attributeName, string $format = null, array $context = []) {
+                            return $innerObject instanceof \DateTimeInterface ? $innerObject->format('d-m-Y') : '';
+                        },
+                        'createAt' => function ($innerObject, $outerObject, string $attributeName, string $format = null, array $context = []) {
+                            return $innerObject instanceof \DateTimeInterface ? $innerObject->format('d-m-Y') : '';
+                        },
+                        'updateAt' => function ($innerObject, $outerObject, string $attributeName, string $format = null, array $context = []) {
+                            return $innerObject instanceof \DateTimeInterface ? $innerObject->format('d-m-Y') : '';
+                        }
+                    ]
+            ]); 
+            
+            return new JsonResponse($data, Response::HTTP_CREATED, [], true);
 
         } catch (\Exception $e) {
-            return $this->json([
-                'error' => true,
-                'message' => 'Un souci serveur, veuillez réessayer plus tard'], Response::HTTP_INTERNAL_SERVER_ERROR);
+                $data = $this->serializer->serialize(
+                    ['error' => true,'message' => "Un souci serveur, veuillez réessayer plus tard"], 
+                    'json'); 
+                
+                return new JsonResponse($data, Response::HTTP_INTERNAL_SERVER_ERROR, [], true);
         }
           
     }
@@ -152,18 +203,20 @@ class UserController extends AbstractController
         $lastname = $request->get('lastname');
 
         if(!isset($firstname) || !isset($lastname)) {
-            return $this->json([
-                'error' => true,
-                'message' => 'Une ou plusieurs données obligatoires sont manquantes',
-            ],Response::HTTP_BAD_REQUEST);
+            $data = $this->serializer->serialize(
+                ['error' => true,'message' => "Une ou plusieurs données obligatoires sont manquantes"], 
+                'json'); 
+            
+            return new JsonResponse($data, Response::HTTP_BAD_REQUEST, [], true);
         }
 
         $user = $this->repository->find($request->get('id'));
         if(!$user) {
-            return $this->json([
-                'error' => true,
-                'message' => "L'utilisateur n'existe pas",
-            ],Response::HTTP_NOT_FOUND);
+            $data = $this->serializer->serialize(
+                ['error' => true,'message' => "L'utilisateur n'existe pas"], 
+                'json'); 
+            
+            return new JsonResponse($data, Response::HTTP_NOT_FOUND, [], true);
         }
         
         try {
@@ -179,23 +232,46 @@ class UserController extends AbstractController
                 foreach ($errors as $error) {
                     $errorMessages[] = $error->getMessage();
                 }
-                return $this->json([
-                    'error'=> true,
-                    'message' => "Une ou plusieurs données sont erronées",
-                    'data' => $errorMessages], Response::HTTP_BAD_REQUEST);
+                
+                $data = $this->serializer->serialize(
+                    ['error' => true,'message' => "Une ou plusieurs données sont erronées",'data' => $errorMessages], 
+                    'json'); 
+                
+                return new JsonResponse($data, Response::HTTP_BAD_REQUEST, [], true);
             }
 
 
             $this->entityManager->flush();
-            return $this->json([
-                'error' => false,
-                'message' => "L'utilisateur a bien été modifié avec succès",
-                'user' =>  $this->serializer->serialize($user, 'json', ['groups' => 'getUsers'])
-                ],Response::HTTP_OK);
+            
+
+            $data = $this->serializer->serialize(
+                [
+                    'error' => true,
+                    'message' => "L'utilisateur a bien été modifié avec succès",
+                    'user' => $user
+                ], 
+                'json',[
+                    'groups' => 'getUsers',
+                    AbstractNormalizer::CALLBACKS => [
+                        'dateBirth' => function ($innerObject, $outerObject, string $attributeName, string $format = null, array $context = []) {
+                            return $innerObject instanceof \DateTimeInterface ? $innerObject->format('d-m-Y') : '';
+                        },
+                        'createAt' => function ($innerObject, $outerObject, string $attributeName, string $format = null, array $context = []) {
+                            return $innerObject instanceof \DateTimeInterface ? $innerObject->format('d-m-Y') : '';
+                        },
+                        'updateAt' => function ($innerObject, $outerObject, string $attributeName, string $format = null, array $context = []) {
+                            return $innerObject instanceof \DateTimeInterface ? $innerObject->format('d-m-Y') : '';
+                        }
+                    ]
+            ]); 
+            
+            return new JsonResponse($data, Response::HTTP_OK, [], true);
         } catch (\Exception $e) {
-            return $this->json([
-                'error' => true,
-                'message' => 'Un souci serveur, veuillez réessayer plus tard'], Response::HTTP_INTERNAL_SERVER_ERROR);
+            $data = $this->serializer->serialize(
+                ['error' => true,'message' => "Un souci serveur, veuillez réessayer plus tard"], 
+                'json'); 
+            
+            return new JsonResponse($data, Response::HTTP_INTERNAL_SERVER_ERROR, [], true);
        }
         
         
@@ -206,18 +282,35 @@ class UserController extends AbstractController
     {
         $user = $this->repository->find($request->get('id'));
         if(!$user) {
-            return $this->json([
-                'error' => true,
-                'message' => "L'utilisateur n'existe pas",
-            ],Response::HTTP_NOT_FOUND);
+
+            $data = $this->serializer->serialize(
+                ['error' => true,'message' => "L'utilisateur n'existe pas"], 
+                'json'); 
+            
+            return new JsonResponse($data, Response::HTTP_NOT_FOUND, [], true);
         }
 
         $this->entityManager->remove($user);
         $this->entityManager->flush();
 
-        return $this->json([
-            'message' => 'User deleted successefully',
-            'data' =>  $user->jsonSerialize()
-            ],Response::HTTP_OK);
+        $data = $this->serializer->serialize(
+            ['error' => false, 'message' => 'User deleted successefully','data' =>   $user], 
+            'json', 
+            [
+                'groups' => 'getUsers',
+                AbstractNormalizer::CALLBACKS => [
+                    'dateBirth' => function ($innerObject, $outerObject, string $attributeName, string $format = null, array $context = []) {
+                        return $innerObject instanceof \DateTimeInterface ? $innerObject->format('d-m-Y') : '';
+                    },
+                    'createAt' => function ($innerObject, $outerObject, string $attributeName, string $format = null, array $context = []) {
+                        return $innerObject instanceof \DateTimeInterface ? $innerObject->format('d-m-Y') : '';
+                    },
+                    'updateAt' => function ($innerObject, $outerObject, string $attributeName, string $format = null, array $context = []) {
+                        return $innerObject instanceof \DateTimeInterface ? $innerObject->format('d-m-Y') : '';
+                    }
+                ]
+        ]); 
+        
+        return new JsonResponse($data, Response::HTTP_OK, [], true);
     }
 }
