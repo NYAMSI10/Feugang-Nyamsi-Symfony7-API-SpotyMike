@@ -25,7 +25,7 @@ class Artist implements JsonSerializable
     private ?User $User_idUser = null;
 
     #[Groups(["getSongs"])]
-    #[ORM\Column(length: 90)]
+    #[ORM\Column(length: 90, unique:true)]
     #[Assert\NotBlank(message: 'The fullname must not be empty')]
     #[Assert\NotNull(message: 'The fullname must not be null')]
     private ?string $fullname = null;

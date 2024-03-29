@@ -40,4 +40,6 @@ class LoginController extends AbstractController
             'path' => 'src/Controller/LoginController.php',
         ]);
     }
+
+    //login, mot de passe et mot de passe oublié
 }
