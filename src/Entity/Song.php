@@ -5,6 +5,7 @@ namespace App\Entity;
 use App\Repository\SongRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
 
@@ -16,8 +17,9 @@ class Song
     #[ORM\Column]
     private ?int $id = null;
 
+
     #[ORM\Column(length: 90, unique: true)]
-    #[Groups(["getSongs", "getAlbums"])]
+    #[Groups(["getSongs", "getAlbums","getArtist"])]
     private ?string $idSong = null;
 
     #[Groups(["getSongs", "getAlbums"])]
@@ -28,16 +30,13 @@ class Song
     #[ORM\Column(length: 125)]
     private ?string $url = null;
 
-    #[Groups(["getSongs", "getAlbums"])]
+
+    #[Groups(["getSongs", "getAlbums","getArtist"])]
     #[ORM\Column(length: 125)]
     private ?string $cover = null;
 
     #[ORM\Column]
     private ?bool $visibility = true;
-
-    #[ORM\Column]
-    #[Groups(["getSongs", "getAlbums"])]
-    private ?\DateTimeImmutable $createAt = null;
 
     #[ORM\ManyToMany(targetEntity: Artist::class, inversedBy: 'songs')]
     private Collection $Artist_idUser;
@@ -48,10 +47,15 @@ class Song
     #[ORM\ManyToOne(inversedBy: 'Song_idSong')]
     private ?PlaylistHasSong $playlistHasSong = null;
 
+    #[Groups(["getSongs","getArtist"])]
+    #[ORM\Column(type: Types::DATETIME_MUTABLE)]
+    private ?\DateTimeInterface $createdAt = null;
+
     public function __construct()
     {
         $this->Artist_idUser = new ArrayCollection();
-        $this->createAt = new \DateTimeImmutable();
+        $this->createdAt = new \DateTimeImmutable();
+        
     }
 
     public function getId(): ?int
@@ -119,18 +123,6 @@ class Song
         return $this;
     }
 
-    public function getCreateAt(): ?\DateTimeImmutable
-    {
-        return $this->createAt;
-    }
-
-    public function setCreateAt(\DateTimeImmutable $createAt): static
-    {
-        $this->createAt = $createAt;
-
-        return $this;
-    }
-
     /**
      * @return Collection<int, Artist>
      */
@@ -178,4 +170,18 @@ class Song
 
         return $this;
     }
+
+    public function getCreatedAt(): ?\DateTimeInterface
+    {
+        return $this->createdAt;
+    }
+
+    public function setCreatedAt(\DateTimeInterface $createdAt): static
+    {
+        $this->createdAt = $createdAt;
+
+        return $this;
+    }
 }
+
+

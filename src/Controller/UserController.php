@@ -72,29 +72,29 @@ class UserController extends AbstractController
     public function show(Request $request): JsonResponse
     {
         $user = $this->repository->find($request->get("id"));
-        if ($user) {
-            $data = $this->serializer->serialize($user, 'json', ['groups' => 'getUsers']);
-            $data = $this->serializer->serialize(
-                ['error' => false, 'message' => 'User retreive successefully', 'data' =>   $user],
-                'json',
-                [
-                    'groups' => 'getUsers',
-                    AbstractNormalizer::CALLBACKS => [
-                        'dateBirth' => function ($innerObject, $outerObject, string $attributeName, string $format = null, array $context = []) {
-                            return $innerObject instanceof \DateTimeInterface ? $innerObject->format('d-m-Y') : '';
-                        },
-                        'createAt' => function ($innerObject, $outerObject, string $attributeName, string $format = null, array $context = []) {
-                            return $innerObject instanceof \DateTimeInterface ? $innerObject->format('d-m-Y') : '';
-                        },
-                        'updateAt' => function ($innerObject, $outerObject, string $attributeName, string $format = null, array $context = []) {
-                            return $innerObject instanceof \DateTimeInterface ? $innerObject->format('d-m-Y') : '';
-                        }
-                    ]
-                ]
-            );
+        if($user)
+            {
+                $data = $this->serializer->serialize(
+                    ['error' => false, 'message' => 'User retreive successefully','data' =>   $user], 
+                    'json', 
+                    [
+                        'groups' => 'getUsers',
+                        AbstractNormalizer::CALLBACKS => [
+                            'dateBirth' => function ($innerObject, $outerObject, string $attributeName, string $format = null, array $context = []) {
+                                return $innerObject instanceof \DateTimeInterface ? $innerObject->format('d-m-Y') : '';
+                            },
+                            'createAt' => function ($innerObject, $outerObject, string $attributeName, string $format = null, array $context = []) {
+                                return $innerObject instanceof \DateTimeInterface ? $innerObject->format('d-m-Y') : '';
+                            },
+                            'updateAt' => function ($innerObject, $outerObject, string $attributeName, string $format = null, array $context = []) {
+                                return $innerObject instanceof \DateTimeInterface ? $innerObject->format('d-m-Y') : '';
+                            }
+                        ]
+                ]); 
 
-            return new JsonResponse($data, Response::HTTP_OK, [], true);
-        } else
+                return new JsonResponse($data, Response::HTTP_OK, [], true);
+            }
+        else
             return $this->json([
                 'message' => 'User not found'
             ], Response::HTTP_NOT_FOUND);
@@ -170,11 +170,10 @@ class UserController extends AbstractController
 
 
                 $data = $this->serializer->serialize(
-                    ['error' => true, 'message' => "Une ou plusieurs donnees sont erronees", 'data' => $errorMessages],
-                    'json'
-                );
-
-                return new JsonResponse($data, Response::HTTP_BAD_REQUEST, [], true);
+                    ['error' => true,'message' => "Une ou plusieurs donnees sont erronees",'data' => $errorMessages], 
+                    'json'); 
+                
+                return new JsonResponse($data, Response::HTTP_CONFLICT, [], true);
             }
 
             $this->entityManager->persist($user);

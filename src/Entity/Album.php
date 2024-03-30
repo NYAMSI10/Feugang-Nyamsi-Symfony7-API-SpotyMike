@@ -5,6 +5,7 @@ namespace App\Entity;
 use App\Repository\AlbumRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use JsonSerializable;
 use Symfony\Component\Validator\Constraints as Assert;
@@ -19,27 +20,27 @@ class Album
     private ?int $id = null;
 
     #[ORM\Column(length: 90)]
-    #[Groups(["getAlbums"])]
+    #[Groups(["getAlbums","getSongs","getArtist"])]
     private ?string $idAlbum = null;
 
     #[ORM\Column(length: 90)]
     #[Assert\NotBlank(message: 'The name must not be empty')]
     #[Assert\NotNull(message: 'The name must not be null')]
-    #[Groups(["getAlbums"])]
+    #[Groups(["getAlbums","getArtist"])]
     private ?string $nom = null;
 
     #[ORM\Column(length: 20)]
     #[Assert\NotBlank(message: 'The category must not be empty')]
     #[Assert\NotNull(message: 'The category must not be null')]
-    #[Groups(["getAlbums"])]
+    #[Groups(["getAlbums","getSongs","getArtist"])]
     private ?string $categ = null;
 
     #[ORM\Column(length: 125)]
-    #[Groups(["getAlbums"])]
+    #[Groups(["getAlbums","getSongs","getArtist"])]
     private ?string $cover = null;
 
     #[ORM\Column]
-    #[Groups(["getSongs"])]
+    #[Groups(["getSongs","getArtist"])]
     #[Assert\Type(
         type: 'integer',
         message: 'The value {{ value }} is not a valid {{ type }}.',
@@ -60,10 +61,14 @@ class Album
 
 
 
+    #[ORM\Column(type: Types::DATETIME_MUTABLE)]
+    #[Groups(["getArtist"])]
+    private ?\DateTimeInterface $createdAt = null;
+
     public function __construct()
     {
         $this->songs = new ArrayCollection();
-        $this->createAt = new \DateTimeImmutable();
+        $this->createdAt = new \DateTimeImmutable();
     }
 
     public function getId(): ?int
@@ -180,10 +185,5 @@ class Album
         return $this->createAt;
     }
 
-    public function setCreateAt(?\DateTimeImmutable $createAt): static
-    {
-        $this->createAt = $createAt;
-
-        return $this;
-    }
+    
 }
