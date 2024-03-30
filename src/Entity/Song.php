@@ -17,11 +17,12 @@ class Song
     #[ORM\Column]
     private ?int $id = null;
 
-    #[Groups(["getSongs","getArtist"])]
-    #[ORM\Column(length: 90,unique: true)]
+
+    #[ORM\Column(length: 90, unique: true)]
+    #[Groups(["getSongs", "getAlbums","getArtist"])]
     private ?string $idSong = null;
 
-    #[Groups(["getSongs","getArtist"])]
+    #[Groups(["getSongs", "getAlbums"])]
     #[ORM\Column(length: 255)]
     private ?string $title = null;
 
@@ -29,26 +30,24 @@ class Song
     #[ORM\Column(length: 125)]
     private ?string $url = null;
 
-    #[Groups(["getSongs","getArtist"])]
+
+    #[Groups(["getSongs", "getAlbums","getArtist"])]
     #[ORM\Column(length: 125)]
     private ?string $cover = null;
 
     #[ORM\Column]
     private ?bool $visibility = true;
 
-    #[Groups(["getSongs"])]
     #[ORM\ManyToMany(targetEntity: Artist::class, inversedBy: 'songs')]
     private Collection $Artist_idUser;
 
-    #[Groups(["getSongs"])]
     #[ORM\ManyToOne(inversedBy: 'song_idSong')]
     private ?Album $album = null;
 
-    #[Groups(["getSongs"])]
     #[ORM\ManyToOne(inversedBy: 'Song_idSong')]
     private ?PlaylistHasSong $playlistHasSong = null;
 
-    #[Groups(["getArtist"])]
+    #[Groups(["getSongs","getArtist"])]
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
     private ?\DateTimeInterface $createdAt = null;
 
@@ -184,3 +183,5 @@ class Song
         return $this;
     }
 }
+
+

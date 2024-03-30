@@ -28,13 +28,12 @@ class ArtistController extends AbstractController
     private $validator;
     private $userService;
 
-    public function __construct(EntityManagerInterface $entityManager,SerializerInterface $serializer,ValidatorInterface $validator)
+    public function __construct(EntityManagerInterface $entityManager, SerializerInterface $serializer, ValidatorInterface $validator)
     {
         $this->entityManager = $entityManager;
         $this->repository = $entityManager->getRepository(Artist::class);
         $this->serializer = $serializer;
         $this->validator = $validator;
-
     }
 
     /*
@@ -265,4 +264,7 @@ class ArtistController extends AbstractController
             ],Response::HTTP_OK);
     }
     */
+
+
+
 }
