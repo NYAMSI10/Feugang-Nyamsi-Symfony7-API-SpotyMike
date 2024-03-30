@@ -15,7 +15,7 @@ class PlaylistHasSong
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(["getSongs","getPlaylist"])]
+    #[Groups(["getPlaylist"])]
     private ?int $id = null;
 
     #[ORM\OneToMany(targetEntity: Playlist::class, mappedBy: 'playlistHasSong')]
@@ -24,11 +24,11 @@ class PlaylistHasSong
     private Collection $Song_idSong;
 
     #[ORM\Column(nullable: true)]
-    #[Groups(["getSongs","getPlaylist"])]
+    #[Groups(["getPlaylist"])]
     private ?bool $download = null;
 
     #[ORM\Column(type: Types::SMALLINT, nullable: true)]
-    #[Groups(["getSongs","getPlaylist"])]
+    #[Groups(["getPlaylist"])]
     private ?int $position = null;
 
     #[ORM\Column]
@@ -39,7 +39,6 @@ class PlaylistHasSong
         $this->Playlist_idPlaylist = new ArrayCollection();
         $this->Song_idSong = new ArrayCollection();
         $this->createAt = new \DateTimeImmutable();
-
     }
 
     public function getId(): ?int

@@ -11,31 +11,31 @@ use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: AlbumRepository::class)]
-class Album implements JsonSerializable
+class Album
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
     private ?int $id = null;
 
-    #[Groups(["getSongs"])]
     #[ORM\Column(length: 90)]
+    #[Groups(["getAlbums"])]
     private ?string $idAlbum = null;
 
     #[ORM\Column(length: 90)]
     #[Assert\NotBlank(message: 'The name must not be empty')]
     #[Assert\NotNull(message: 'The name must not be null')]
+    #[Groups(["getAlbums"])]
     private ?string $nom = null;
 
     #[ORM\Column(length: 20)]
     #[Assert\NotBlank(message: 'The category must not be empty')]
     #[Assert\NotNull(message: 'The category must not be null')]
-    #[Groups(["getSongs"])]
+    #[Groups(["getAlbums"])]
     private ?string $categ = null;
 
-
     #[ORM\Column(length: 125)]
-    #[Groups(["getSongs"])]
+    #[Groups(["getAlbums"])]
     private ?string $cover = null;
 
     #[ORM\Column]
@@ -50,11 +50,20 @@ class Album implements JsonSerializable
     private ?Artist $artist_User_idUser = null;
 
     #[ORM\OneToMany(targetEntity: Song::class, mappedBy: 'album')]
-    private Collection $song_idSong;
+    #[Groups(["getAlbums"])]
+    private Collection $songs;
+
+    #[ORM\Column(nullable: true)]
+
+    private ?\DateTimeImmutable $createAt = null;
+
+
+
 
     public function __construct()
     {
-        $this->song_idSong = new ArrayCollection();
+        $this->songs = new ArrayCollection();
+        $this->createAt = new \DateTimeImmutable();
     }
 
     public function getId(): ?int
@@ -137,27 +146,27 @@ class Album implements JsonSerializable
     /**
      * @return Collection<int, Song>
      */
-    public function getSongIdSong(): Collection
+    public function getSongs(): Collection
     {
-        return $this->song_idSong;
+        return $this->songs;
     }
 
-    public function addSongIdSong(Song $songIdSong): static
+    public function addSongs(Song $songs): static
     {
-        if (!$this->song_idSong->contains($songIdSong)) {
-            $this->song_idSong->add($songIdSong);
-            $songIdSong->setAlbum($this);
+        if (!$this->songs->contains($songs)) {
+            $this->songs->add($songs);
+            $songs->setAlbum($this);
         }
 
         return $this;
     }
 
-    public function removeSongIdSong(Song $songIdSong): static
+    public function removeSongs(Song $songs): static
     {
-        if ($this->song_idSong->removeElement($songIdSong)) {
+        if ($this->songs->removeElement($songs)) {
             // set the owning side to null (unless already changed)
-            if ($songIdSong->getAlbum() === $this) {
-                $songIdSong->setAlbum(null);
+            if ($songs->getAlbum() === $this) {
+                $songs->setAlbum(null);
             }
         }
 
@@ -165,26 +174,16 @@ class Album implements JsonSerializable
     }
 
 
-    private function serializeSongs()
+
+    public function getCreateAt(): ?\DateTimeImmutable
     {
-        $songIds = [];
-        foreach ($this->getSongIdSong() as $song) {
-            $songIds[] = $song->getId(); // Assuming getId() returns the ID of the album
-        }
-        return $songIds;
+        return $this->createAt;
     }
 
-    public function jsonSerialize() {
-        return [
-            "id" => $this->getId(),
-            "idAlbum" => $this->getIdAlbum(),
-            "artist" => $this->getArtistUserIdUser(),
-            "nom" => $this->getNom(),
-            "categ" => $this->getCateg(),
-            "cover" => $this->getCover(),
-            "year" => $this->getYear(),
-            "songs" => $this->serializeSongs(),
-            
-        ];
+    public function setCreateAt(?\DateTimeImmutable $createAt): static
+    {
+        $this->createAt = $createAt;
+
+        return $this;
     }
 }

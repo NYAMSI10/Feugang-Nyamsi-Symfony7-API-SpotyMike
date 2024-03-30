@@ -16,18 +16,19 @@ class Song
     #[ORM\Column]
     private ?int $id = null;
 
-    #[Groups(["getSongs"])]
-    #[ORM\Column(length: 90,unique: true)]
+    #[ORM\Column(length: 90, unique: true)]
+    #[Groups(["getSongs", "getAlbums"])]
     private ?string $idSong = null;
 
-    #[Groups(["getSongs"])]
+    #[Groups(["getSongs", "getAlbums"])]
     #[ORM\Column(length: 255)]
     private ?string $title = null;
+
     #[Groups(["getSongs"])]
     #[ORM\Column(length: 125)]
     private ?string $url = null;
 
-    #[Groups(["getSongs"])]
+    #[Groups(["getSongs", "getAlbums"])]
     #[ORM\Column(length: 125)]
     private ?string $cover = null;
 
@@ -35,17 +36,15 @@ class Song
     private ?bool $visibility = true;
 
     #[ORM\Column]
+    #[Groups(["getSongs", "getAlbums"])]
     private ?\DateTimeImmutable $createAt = null;
 
-    #[Groups(["getSongs"])]
     #[ORM\ManyToMany(targetEntity: Artist::class, inversedBy: 'songs')]
     private Collection $Artist_idUser;
 
-    #[Groups(["getSongs"])]
     #[ORM\ManyToOne(inversedBy: 'song_idSong')]
     private ?Album $album = null;
 
-    #[Groups(["getSongs"])]
     #[ORM\ManyToOne(inversedBy: 'Song_idSong')]
     private ?PlaylistHasSong $playlistHasSong = null;
 
