@@ -5,6 +5,7 @@ namespace App\Entity;
 use App\Repository\SongRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Serializer\Annotation\Groups;
 
@@ -16,26 +17,24 @@ class Song
     #[ORM\Column]
     private ?int $id = null;
 
-    #[Groups(["getSongs"])]
+    #[Groups(["getSongs","getArtist"])]
     #[ORM\Column(length: 90,unique: true)]
     private ?string $idSong = null;
 
-    #[Groups(["getSongs"])]
+    #[Groups(["getSongs","getArtist"])]
     #[ORM\Column(length: 255)]
     private ?string $title = null;
+
     #[Groups(["getSongs"])]
     #[ORM\Column(length: 125)]
     private ?string $url = null;
 
-    #[Groups(["getSongs"])]
+    #[Groups(["getSongs","getArtist"])]
     #[ORM\Column(length: 125)]
     private ?string $cover = null;
 
     #[ORM\Column]
     private ?bool $visibility = true;
-
-    #[ORM\Column]
-    private ?\DateTimeImmutable $createAt = null;
 
     #[Groups(["getSongs"])]
     #[ORM\ManyToMany(targetEntity: Artist::class, inversedBy: 'songs')]
@@ -49,10 +48,15 @@ class Song
     #[ORM\ManyToOne(inversedBy: 'Song_idSong')]
     private ?PlaylistHasSong $playlistHasSong = null;
 
+    #[Groups(["getArtist"])]
+    #[ORM\Column(type: Types::DATETIME_MUTABLE)]
+    private ?\DateTimeInterface $createdAt = null;
+
     public function __construct()
     {
         $this->Artist_idUser = new ArrayCollection();
-        $this->createAt = new \DateTimeImmutable();
+        $this->createdAt = new \DateTimeImmutable();
+        
     }
 
     public function getId(): ?int
@@ -120,18 +124,6 @@ class Song
         return $this;
     }
 
-    public function getCreateAt(): ?\DateTimeImmutable
-    {
-        return $this->createAt;
-    }
-
-    public function setCreateAt(\DateTimeImmutable $createAt): static
-    {
-        $this->createAt = $createAt;
-
-        return $this;
-    }
-
     /**
      * @return Collection<int, Artist>
      */
@@ -176,6 +168,18 @@ class Song
     public function setPlaylistHasSong(?PlaylistHasSong $playlistHasSong): static
     {
         $this->playlistHasSong = $playlistHasSong;
+
+        return $this;
+    }
+
+    public function getCreatedAt(): ?\DateTimeInterface
+    {
+        return $this->createdAt;
+    }
+
+    public function setCreatedAt(\DateTimeInterface $createdAt): static
+    {
+        $this->createdAt = $createdAt;
 
         return $this;
     }

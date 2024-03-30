@@ -39,7 +39,8 @@ security:
         - { path: ^/login, roles: PUBLIC_ACCESS }
         - { path: ^/register, roles: PUBLIC_ACCESS }
         - { path: ^/, roles: IS_AUTHENTICATED_FULLY }
-
+    role_hierarchy:
+        ROLE_ARTIST: ROLE_USER
 when@test:
     security:
         password_hashers:

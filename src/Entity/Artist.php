@@ -9,7 +9,7 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Serializer\Annotation\Groups;
-
+use Symfony\Component\Serializer\Annotation\SerializedName;
 
 #[ORM\Entity(repositoryClass: ArtistRepository::class)]
 class Artist
@@ -21,34 +21,43 @@ class Artist
 
     #[ORM\OneToOne(inversedBy: 'artist', cascade: ['persist', 'remove'])]
     #[ORM\JoinColumn(nullable: false)]
+    #[Groups(["getArtist"])]
     private ?User $User_idUser = null;
 
-    #[Groups(["getSongs","getArtists"])]
+    #[Groups(["getSongs"])]
     #[ORM\Column(length: 90, unique:true)]
-    #[Assert\NotBlank(message: 'The fullname must not be empty')]
-    #[Assert\NotNull(message: 'The fullname must not be null')]
+    #[Assert\NotBlank(message: 'fullname')]
+    #[Assert\NotNull(message: 'fullname')]
     private ?string $fullname = null;
 
-    #[Groups(["getSongs","getArtists"])]
+    #[Groups(["getSongs"])]
     #[ORM\Column(length: 90)]
-    #[Assert\NotBlank(message: 'The label must not be empty')]
-    #[Assert\NotNull(message: 'The label must not be null')]
+    #[Assert\NotBlank(message: 'label')]
+    #[Assert\NotNull(message: 'label')]
     private ?string $label = null;
 
-    #[Groups(["getSongs","getArtists"])]
+    #[Groups(["getSongs"])]
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $description = null;
 
+    #[Groups(["getArtist"])]
     #[ORM\ManyToMany(targetEntity: Song::class, mappedBy: 'Artist_idUser')]
     private Collection $songs;
 
+    #[Groups(["getArtist"])]
     #[ORM\OneToMany(targetEntity: Album::class, mappedBy: 'artist_User_idUser')]
     private Collection $albums;
+
+    #[Groups(["getArtist"])]
+    #[SerializedName('Artist.createdAt')]
+    #[ORM\Column(type: Types::DATETIME_MUTABLE)]
+    private ?\DateTimeInterface $createdAt = null;
 
     public function __construct()
     {
         $this->songs = new ArrayCollection();
         $this->albums = new ArrayCollection();
+        $this->createdAt = new \DateTimeImmutable();
     }
 
     public function getId(): ?int
@@ -177,5 +186,17 @@ class Artist
             $songIds[] = $song->getId(); // Assuming getId() returns the ID of the album
         }
         return $songIds;
+    }
+
+    public function getCreatedAt(): ?\DateTimeInterface
+    {
+        return $this->createdAt;
+    }
+
+    public function setCreatedAt(\DateTimeInterface $createdAt): static
+    {
+        $this->createdAt = $createdAt;
+
+        return $this;
     }
 }

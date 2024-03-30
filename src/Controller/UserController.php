@@ -74,7 +74,6 @@ class UserController extends AbstractController
         $user = $this->repository->find($request->get("id"));
         if($user)
             {
-                $data = $this->serializer->serialize($user, 'json', ['groups' => 'getUsers']);
                 $data = $this->serializer->serialize(
                     ['error' => false, 'message' => 'User retreive successefully','data' =>   $user], 
                     'json', 
@@ -171,7 +170,7 @@ class UserController extends AbstractController
                     ['error' => true,'message' => "Une ou plusieurs donnees sont erronees",'data' => $errorMessages], 
                     'json'); 
                 
-                return new JsonResponse($data, Response::HTTP_BAD_REQUEST, [], true);
+                return new JsonResponse($data, Response::HTTP_CONFLICT, [], true);
             }
         
             $this->entityManager->persist($user);

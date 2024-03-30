@@ -29,7 +29,7 @@ class User implements UserInterface,PasswordAuthenticatedUserInterface
     #[Assert\NotBlank(message: 'firstname')]
     #[Assert\NotNull(message: 'firstname')]
     #[Assert\Length(max: 55,maxMessage: 'firstname')]
-    #[Groups(["getUsers","getLogin"])]
+    #[Groups(["getUsers","getLogin","getArtist"])]
     private ?string $firstname = null;
 
     #[ORM\Column(length: 80, unique: true)]
@@ -64,16 +64,16 @@ class User implements UserInterface,PasswordAuthenticatedUserInterface
     private ?Artist $artist = null;
 
     #[ORM\Column(length: 55)]
-    #[Groups(["getUsers","getLogin"])]
+    #[Groups(["getUsers","getLogin","getArtist"])]
     #[Assert\Length(max: 55,maxMessage: 'lastname')]
     private ?string $lastname = null;
 
     #[ORM\Column(type: Types::DATE_MUTABLE)]
-    #[Groups(["getUsers","getLogin"])]
+    #[Groups(["getUsers","getLogin","getArtist"])]
     private ?\DateTimeInterface $dateBirth = null;
 
     #[ORM\Column(length: 30, nullable: true)]
-    #[Groups(["getUsers","getLogin"])]
+    #[Groups(["getUsers","getLogin","getArtist"])]
     #[Assert\Length(max: 30,maxMessage: 'sexe')]
     private ?string $sexe = null;
 

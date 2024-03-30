@@ -5,6 +5,7 @@ namespace App\Entity;
 use App\Repository\AlbumRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use JsonSerializable;
 use Symfony\Component\Validator\Constraints as Assert;
@@ -18,28 +19,29 @@ class Album implements JsonSerializable
     #[ORM\Column]
     private ?int $id = null;
 
-    #[Groups(["getSongs"])]
+    #[Groups(["getSongs","getArtist"])]
     #[ORM\Column(length: 90)]
     private ?string $idAlbum = null;
 
     #[ORM\Column(length: 90)]
     #[Assert\NotBlank(message: 'The name must not be empty')]
     #[Assert\NotNull(message: 'The name must not be null')]
+    #[Groups(["getArtist"])]
     private ?string $nom = null;
 
     #[ORM\Column(length: 20)]
     #[Assert\NotBlank(message: 'The category must not be empty')]
     #[Assert\NotNull(message: 'The category must not be null')]
-    #[Groups(["getSongs"])]
+    #[Groups(["getSongs","getArtist"])]
     private ?string $categ = null;
 
 
     #[ORM\Column(length: 125)]
-    #[Groups(["getSongs"])]
+    #[Groups(["getSongs","getArtist"])]
     private ?string $cover = null;
 
     #[ORM\Column]
-    #[Groups(["getSongs"])]
+    #[Groups(["getSongs","getArtist"])]
     #[Assert\Type(
         type: 'integer',
         message: 'The value {{ value }} is not a valid {{ type }}.',
@@ -52,9 +54,14 @@ class Album implements JsonSerializable
     #[ORM\OneToMany(targetEntity: Song::class, mappedBy: 'album')]
     private Collection $song_idSong;
 
+    #[ORM\Column(type: Types::DATETIME_MUTABLE)]
+    #[Groups(["getArtist"])]
+    private ?\DateTimeInterface $createdAt = null;
+
     public function __construct()
     {
         $this->song_idSong = new ArrayCollection();
+        $this->createdAt = new \DateTimeImmutable();
     }
 
     public function getId(): ?int
@@ -186,5 +193,17 @@ class Album implements JsonSerializable
             "songs" => $this->serializeSongs(),
             
         ];
+    }
+
+    public function getCreatedAt(): ?\DateTimeInterface
+    {
+        return $this->createdAt;
+    }
+
+    public function setCreatedAt(\DateTimeInterface $createdAt): static
+    {
+        $this->createdAt = $createdAt;
+
+        return $this;
     }
 }
