@@ -29,7 +29,7 @@ class User implements UserInterface,PasswordAuthenticatedUserInterface
     #[Assert\NotBlank(message: 'firstname')]
     #[Assert\NotNull(message: 'firstname')]
     #[Assert\Length(max: 55,maxMessage: 'firstname')]
-    #[Groups(["getUsers"])]
+    #[Groups(["getUsers","getLogin"])]
     private ?string $firstname = null;
 
     #[ORM\Column(length: 80, unique: true)]
@@ -37,7 +37,7 @@ class User implements UserInterface,PasswordAuthenticatedUserInterface
     #[Assert\NotNull(message: 'email')]
     #[Assert\Email(message: 'email')]
     #[Assert\Length(max: 55,maxMessage: 'email')]
-    #[Groups(["getUsers"])]
+    #[Groups(["getUsers","getLogin"])]
     private ?string $email = null;
 
     #[ORM\Column(length: 90)]
@@ -46,13 +46,13 @@ class User implements UserInterface,PasswordAuthenticatedUserInterface
     private ?string $password = null;
 
     #[ORM\Column(length: 15, nullable: true)]
-    #[Groups(["getUsers"])]
-    #[Assert\Regex(pattern:'/^\+33\(0\)[0-9]{9}*$', message:'Telephone')]
-    #[Assert\Length(min:10,max: 12,maxMessage: 'Telephone')]
+    #[Groups(["getUsers","getLogin"])]
+    #[Assert\Regex(pattern:'/^(?:\+33|0)[0-9]{9}$/')]
+    #[Assert\Length(min:10,max: 12,maxMessage: 'Telephone',minMessage:'Telephone',exactMessage:'Telephone')]
     private ?string $tel = null;
 
     #[ORM\Column]
-    #[Groups(["getUsers"])]
+    #[Groups(["getUsers","getLogin"])]
     private ?\DateTimeImmutable $createAt = null;
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
@@ -60,19 +60,20 @@ class User implements UserInterface,PasswordAuthenticatedUserInterface
     private ?\DateTimeInterface $updateAt = null;
 
     #[ORM\OneToOne(mappedBy: 'User_idUser', cascade: ['persist', 'remove'])]
+    #[Groups(["getLogin"])]
     private ?Artist $artist = null;
 
     #[ORM\Column(length: 55)]
-    #[Groups(["getUsers"])]
+    #[Groups(["getUsers","getLogin"])]
     #[Assert\Length(max: 55,maxMessage: 'lastname')]
     private ?string $lastname = null;
 
     #[ORM\Column(type: Types::DATE_MUTABLE)]
-    #[Groups(["getUsers"])]
+    #[Groups(["getUsers","getLogin"])]
     private ?\DateTimeInterface $dateBirth = null;
 
     #[ORM\Column(length: 30, nullable: true)]
-    #[Groups(["getUsers"])]
+    #[Groups(["getUsers","getLogin"])]
     #[Assert\Length(max: 30,maxMessage: 'sexe')]
     private ?string $sexe = null;
 

@@ -19,7 +19,7 @@ use Symfony\Component\Serializer\Serializer;
 use Symfony\Component\Validator\Constraints\Json;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
-#[Route('/api/user')]
+
 class UserController extends AbstractController
 {
     private $entityManager;
@@ -38,7 +38,7 @@ class UserController extends AbstractController
 
     }
 
-    #[Route('/', name: 'user_list', methods: ['GET'])]
+    #[Route('/user', name: 'user_list', methods: ['GET'])]
     public function index(): JsonResponse
     {
         $users = $this->repository->findAll();
@@ -64,7 +64,7 @@ class UserController extends AbstractController
         return new JsonResponse($data, Response::HTTP_OK, [], true);
     }
 
-    #[Route('/{id}', name: 'user_show', methods: ['GET'])]
+    #[Route('/user/{id}', name: 'user_show', methods: ['GET'])]
     public function show(Request $request): JsonResponse
     {
         $user = $this->repository->find($request->get("id"));
@@ -118,6 +118,7 @@ class UserController extends AbstractController
             
             return new JsonResponse($data, Response::HTTP_BAD_REQUEST, [], true);
         }
+        
 
         if($age < 12) {
             $data = $this->serializer->serialize(
@@ -139,9 +140,11 @@ class UserController extends AbstractController
             $user = new User();
             $user->setIdUser(md5(uniqid($email, true)));
             $user->setFirstname($firstname);
+            $user->setLastname($lastname);
             $user->setEmail($email);
             $user->setTel($request->get('tel'));
             $user->setSexe($request->get('sexe'));
+            $user->setDateBirth(new \DateTime($dateBirth));
             
             $hashedPassword = $this->passwordHasher->hashPassword(
                 $user,
@@ -153,11 +156,15 @@ class UserController extends AbstractController
             if (count($errors) > 0) {
                 $errorMessages = [];
                 foreach ($errors as $error) {
-                    $errorMessages[] = $error->getMessage();
+                    $errorMessage = $error->getMessage();
+                    if (!in_array($errorMessage, $errorMessages)) {
+                        $errorMessages[] = $errorMessage;
+                    }
                 }
                 
+                
                 $data = $this->serializer->serialize(
-                    ['error' => true,'message' => "Une ou plusieurs données sont erronées",'data' => $errorMessages], 
+                    ['error' => true,'message' => "Une ou plusieurs donnees sont erronees",'data' => $errorMessages], 
                     'json'); 
                 
                 return new JsonResponse($data, Response::HTTP_BAD_REQUEST, [], true);
@@ -188,7 +195,7 @@ class UserController extends AbstractController
 
         } catch (\Exception $e) {
                 $data = $this->serializer->serialize(
-                    ['error' => true,'message' => "Un souci serveur, veuillez réessayer plus tard"], 
+                    ['error' => true,'message' => "Un souci serveur, veuillez réessayer plus tard","erreur" => $e->getMessage()], 
                     'json'); 
                 
                 return new JsonResponse($data, Response::HTTP_INTERNAL_SERVER_ERROR, [], true);
@@ -196,7 +203,7 @@ class UserController extends AbstractController
           
     }
 
-    #[Route('/edit/{id}', name: 'user_edit', methods: ['POST','PUT'])]
+    #[Route('/user/{id}', name: 'user_edit', methods: ['POST','PUT'])]
     public function edit(Request $request): JsonResponse
     {
         $firstname = $request->get('firstname');
@@ -277,7 +284,7 @@ class UserController extends AbstractController
         
     }
 
-    #[Route('/{id}', name: 'user_delete', methods: ['DELETE'])]
+    #[Route('/user/{id}', name: 'user_delete', methods: ['DELETE'])]
     public function delete(Request $request): JsonResponse
     {
         $user = $this->repository->find($request->get('id'));
