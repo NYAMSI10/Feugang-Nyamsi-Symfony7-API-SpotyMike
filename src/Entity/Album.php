@@ -6,28 +6,44 @@ use App\Repository\AlbumRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use JsonSerializable;
+use Symfony\Component\Validator\Constraints as Assert;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: AlbumRepository::class)]
-class Album
+class Album implements JsonSerializable
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
     private ?int $id = null;
 
+    #[Groups(["getSongs"])]
     #[ORM\Column(length: 90)]
     private ?string $idAlbum = null;
 
     #[ORM\Column(length: 90)]
+    #[Assert\NotBlank(message: 'The name must not be empty')]
+    #[Assert\NotNull(message: 'The name must not be null')]
     private ?string $nom = null;
 
     #[ORM\Column(length: 20)]
+    #[Assert\NotBlank(message: 'The category must not be empty')]
+    #[Assert\NotNull(message: 'The category must not be null')]
+    #[Groups(["getSongs"])]
     private ?string $categ = null;
 
+
     #[ORM\Column(length: 125)]
+    #[Groups(["getSongs"])]
     private ?string $cover = null;
 
     #[ORM\Column]
+    #[Groups(["getSongs"])]
+    #[Assert\Type(
+        type: 'integer',
+        message: 'The value {{ value }} is not a valid {{ type }}.',
+    )]
     private ?int $year = 2024;
 
     #[ORM\ManyToOne(inversedBy: 'albums')]
@@ -146,5 +162,29 @@ class Album
         }
 
         return $this;
+    }
+
+
+    private function serializeSongs()
+    {
+        $songIds = [];
+        foreach ($this->getSongIdSong() as $song) {
+            $songIds[] = $song->getId(); // Assuming getId() returns the ID of the album
+        }
+        return $songIds;
+    }
+
+    public function jsonSerialize() {
+        return [
+            "id" => $this->getId(),
+            "idAlbum" => $this->getIdAlbum(),
+            "artist" => $this->getArtistUserIdUser(),
+            "nom" => $this->getNom(),
+            "categ" => $this->getCateg(),
+            "cover" => $this->getCover(),
+            "year" => $this->getYear(),
+            "songs" => $this->serializeSongs(),
+            
+        ];
     }
 }
