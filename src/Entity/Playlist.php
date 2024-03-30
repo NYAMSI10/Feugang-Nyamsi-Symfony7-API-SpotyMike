@@ -20,12 +20,12 @@ class Playlist
     // #[ORM\Id]
     #[ORM\Column(length: 90)]
     private ?string $idPlaylist = null;
-    #[Groups(["getSongs", "getPlaylist"])]
+    #[Groups(["getPlaylist"])]
     #[ORM\Column(length: 50)]
     private ?string $title = null;
 
     #[ORM\Column]
-    #[Groups(["getSongs", "getPlaylist"])]
+    #[Groups(["getPlaylist"])]
     private ?bool $public = true;
 
     #[ORM\Column]
@@ -42,7 +42,6 @@ class Playlist
     {
         $this->createAt = new \DateTimeImmutable();
         $this->updateAt = new \DateTimeImmutable();
-
     }
 
     public function getId(): ?int
