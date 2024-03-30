@@ -25,13 +25,12 @@ class ArtistController extends AbstractController
     private $serializer;
     private $validator;
 
-    public function __construct(EntityManagerInterface $entityManager,SerializerInterface $serializer,ValidatorInterface $validator)
+    public function __construct(EntityManagerInterface $entityManager, SerializerInterface $serializer, ValidatorInterface $validator)
     {
         $this->entityManager = $entityManager;
         $this->repository = $entityManager->getRepository(Artist::class);
         $this->serializer = $serializer;
         $this->validator = $validator;
-
     }
 
     #[Route('/', name: 'artist_list', methods: ['GET'])]
@@ -46,94 +45,93 @@ class ArtistController extends AbstractController
         return $this->json([
             'message' => 'List of artists',
             'data' =>   $data
-            ],Response::HTTP_OK);
-
+        ], Response::HTTP_OK);
     }
 
-    #[Route('/new', name: 'artist_new', methods: 'POST')]
-    public function new(Request $request): JsonResponse
-    {
-        $data_received = $request->request->all();
+    // #[Route('/new', name: 'artist_new', methods: 'POST')]
+    // public function new(Request $request): JsonResponse
+    // {
+    //     $data_received = $request->request->all();
 
-        if(!isset($data_received['User_idUser'])) {
-            return $this->json([
-                'message' => 'Please choose a user',
-            ]);
-        }
+    //     if(!isset($data_received['User_idUser'])) {
+    //         return $this->json([
+    //             'message' => 'Please choose a user',
+    //         ]);
+    //     }
 
 
-        $artist = new Artist();
+    //     $artist = new Artist();
 
-        $user = $this->entityManager->getRepository(User::class)->find($data_received['User_idUser']);
-        $artist->setUserIdUser($user);
-        $artist->setFullname($data_received['fullname']);
-        $artist->setLabel($data_received['label']);
-        $artist->setDescription($data_received['description']);
+    //     $user = $this->entityManager->getRepository(User::class)->find($data_received['User_idUser']);
+    //     $artist->setUserIdUser($user);
+    //     $artist->setFullname($data_received['fullname']);
+    //     $artist->setLabel($data_received['label']);
+    //     $artist->setDescription($data_received['description']);
 
-        $errors = $this->validator->validate($artist);
-        if (count($errors) > 0) {
-            $errorMessages = [];
-            foreach ($errors as $error) {
-                $errorMessages[] = $error->getMessage();
-            }
-            return $this->json(['errors' => $errorMessages], Response::HTTP_BAD_REQUEST);
-        }
-        try {
-            $this->entityManager->persist($artist);
-            $this->entityManager->flush();
-            return $this->json([
-                'message' => 'Artist created successfully',
-                'data' =>  $artist->jsonSerialize()
-                ],Response::HTTP_CREATED);
-        }  catch (\Exception $e) {
-            return $this->json(['errors' => $e->getMessage(),'message' => 'An error occurred'], Response::HTTP_INTERNAL_SERVER_ERROR);
-        }
-        
-        
-    }
+    //     $errors = $this->validator->validate($artist);
+    //     if (count($errors) > 0) {
+    //         $errorMessages = [];
+    //         foreach ($errors as $error) {
+    //             $errorMessages[] = $error->getMessage();
+    //         }
+    //         return $this->json(['errors' => $errorMessages], Response::HTTP_BAD_REQUEST);
+    //     }
+    //     try {
+    //         $this->entityManager->persist($artist);
+    //         $this->entityManager->flush();
+    //         return $this->json([
+    //             'message' => 'Artist created successfully',
+    //             'data' =>  $artist->jsonSerialize()
+    //             ],Response::HTTP_CREATED);
+    //     }  catch (\Exception $e) {
+    //         return $this->json(['errors' => $e->getMessage(),'message' => 'An error occurred'], Response::HTTP_INTERNAL_SERVER_ERROR);
+    //     }
 
-    #[Route('/{id}', name: 'artist_show', methods: ['GET'])]
-    public function show(Request $request,Artist $artist): JsonResponse
-    {
-        return $this->json([
-            'message' => 'Artist retreive successfully',
-            'data' =>  $artist->jsonSerialize()
-            ],Response::HTTP_OK);
-    }
 
-    #[Route('/edit/{id}', name: 'artist_edit', methods: ['POST','PUT'])]
-    public function edit(Request $request,Artist $artist): JsonResponse
-    {
-        $data_received = $request->toArray();
+    // }
 
-        $artist->setFullname($data_received['fullname']?$data_received['fullname']:$artist->getFullname());
-        $artist->setLabel($data_received['label']?$data_received['fullname']:$artist->getLabel());
-        $artist->setDescription($data_received['description']);
-        
-        try {
-            $this->entityManager->persist($artist);
-            $this->entityManager->flush();
-        }  catch (\Exception $e) {
-            return $this->json(['errors' => $e->getMessage(),'message' => 'An error occurred'], Response::HTTP_INTERNAL_SERVER_ERROR);
-        }
-        
-        return $this->json([
-            'message' => 'Artist modified successfully',
-            'data' =>  $artist->jsonSerialize()
-            ],Response::HTTP_OK);
-    }
+    // #[Route('/{id}', name: 'artist_show', methods: ['GET'])]
+    // public function show(Request $request,Artist $artist): JsonResponse
+    // {
+    //     return $this->json([
+    //         'message' => 'Artist retreive successfully',
+    //         'data' =>  $artist->jsonSerialize()
+    //         ],Response::HTTP_OK);
+    // }
 
-    #[Route('/{id}', name: 'artist_delete', methods: ['DELETE'])]
-    public function delete(Request $request, Artist $artist): JsonResponse
-    {
-        
-        $this->entityManager->remove($artist);
-        $this->entityManager->flush();
-        $data = $this->serializer->serialize($artist, 'json');
+    // #[Route('/edit/{id}', name: 'artist_edit', methods: ['POST', 'PUT'])]
+    // public function edit(Request $request, Artist $artist): JsonResponse
+    // {
+    //     $data_received = $request->toArray();
 
-        return $this->json([
-            'message' => 'Artist deleted successfully',
-            'data' =>  $artist->jsonSerialize()
-            ],Response::HTTP_OK);
-    }
+    //     $artist->setFullname($data_received['fullname'] ? $data_received['fullname'] : $artist->getFullname());
+    //     $artist->setLabel($data_received['label'] ? $data_received['fullname'] : $artist->getLabel());
+    //     $artist->setDescription($data_received['description']);
+
+    //     try {
+    //         $this->entityManager->persist($artist);
+    //         $this->entityManager->flush();
+    //     } catch (\Exception $e) {
+    //         return $this->json(['errors' => $e->getMessage(), 'message' => 'An error occurred'], Response::HTTP_INTERNAL_SERVER_ERROR);
+    //     }
+
+    //     return $this->json([
+    //         'message' => 'Artist modified successfully',
+    //         'data' =>  $artist->jsonSerialize()
+    //     ], Response::HTTP_OK);
+    // }
+
+    // #[Route('/{id}', name: 'artist_delete', methods: ['DELETE'])]
+    // public function delete(Request $request, Artist $artist): JsonResponse
+    // {
+
+    //     $this->entityManager->remove($artist);
+    //     $this->entityManager->flush();
+    //     $data = $this->serializer->serialize($artist, 'json');
+
+    //     return $this->json([
+    //         'message' => 'Artist deleted successfully',
+    //         'data' =>  $artist->jsonSerialize()
+    //     ], Response::HTTP_OK);
+    // }
 }
