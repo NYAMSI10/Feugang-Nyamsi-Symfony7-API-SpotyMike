@@ -7,13 +7,12 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
-use JsonSerializable;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Serializer\Annotation\Groups;
 
 
 #[ORM\Entity(repositoryClass: ArtistRepository::class)]
-class Artist implements JsonSerializable
+class Artist
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -24,19 +23,19 @@ class Artist implements JsonSerializable
     #[ORM\JoinColumn(nullable: false)]
     private ?User $User_idUser = null;
 
-    #[Groups(["getSongs"])]
-    #[ORM\Column(length: 90)]
+    #[Groups(["getSongs","getArtists"])]
+    #[ORM\Column(length: 90, unique:true)]
     #[Assert\NotBlank(message: 'The fullname must not be empty')]
     #[Assert\NotNull(message: 'The fullname must not be null')]
     private ?string $fullname = null;
 
-    #[Groups(["getSongs"])]
+    #[Groups(["getSongs","getArtists"])]
     #[ORM\Column(length: 90)]
     #[Assert\NotBlank(message: 'The label must not be empty')]
     #[Assert\NotNull(message: 'The label must not be null')]
     private ?string $label = null;
 
-    #[Groups(["getSongs"])]
+    #[Groups(["getSongs","getArtists"])]
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $description = null;
 
@@ -162,15 +161,21 @@ class Artist implements JsonSerializable
         return $this;
     }
 
-    public function jsonSerialize() {
-        return [
-            "id" => $this->getId(),
-            "user" => $this->getUserIdUser(),
-            "fullname" => $this->getFullname(),
-            "label" => $this->getLabel(),
-            "description" => $this->getDescription(),
-            "albums" => $this->getAlbums()->toArray(),
-            
-        ];
+    private function serializeAlbums()
+    {
+        $albumIds = [];
+        foreach ($this->getAlbums() as $album) {
+            $albumIds[] = $album->getId(); // Assuming getId() returns the ID of the album
+        }
+        return $albumIds;
+    }
+
+    private function serializeSongs()
+    {
+        $songIds = [];
+        foreach ($this->getSongs() as $song) {
+            $songIds[] = $song->getId(); // Assuming getId() returns the ID of the album
+        }
+        return $songIds;
     }
 }

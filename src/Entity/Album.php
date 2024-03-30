@@ -40,6 +40,10 @@ class Album implements JsonSerializable
 
     #[ORM\Column]
     #[Groups(["getSongs"])]
+    #[Assert\Type(
+        type: 'integer',
+        message: 'The value {{ value }} is not a valid {{ type }}.',
+    )]
     private ?int $year = 2024;
 
     #[ORM\ManyToOne(inversedBy: 'albums')]
@@ -160,6 +164,16 @@ class Album implements JsonSerializable
         return $this;
     }
 
+
+    private function serializeSongs()
+    {
+        $songIds = [];
+        foreach ($this->getSongIdSong() as $song) {
+            $songIds[] = $song->getId(); // Assuming getId() returns the ID of the album
+        }
+        return $songIds;
+    }
+
     public function jsonSerialize() {
         return [
             "id" => $this->getId(),
@@ -169,7 +183,7 @@ class Album implements JsonSerializable
             "categ" => $this->getCateg(),
             "cover" => $this->getCover(),
             "year" => $this->getYear(),
-            "songs" => $this->getSongIdSong()->toArray(),
+            "songs" => $this->serializeSongs(),
             
         ];
     }
