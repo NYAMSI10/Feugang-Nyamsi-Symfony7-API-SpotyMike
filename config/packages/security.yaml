@@ -12,9 +12,9 @@ security:
         dev:
             pattern: ^/(_(profiler|wdt)|css|images|js)/
             security: false
-        main:
-            lazy: true
-            provider: app_user_provider
+        #main:
+            #lazy: true
+            #provider: app_user_provider
         login:
             pattern: ^/login
             stateless: true
@@ -24,7 +24,7 @@ security:
                 failure_handler: lexik_jwt_authentication.handler.authentication_failure
 
         api:
-            pattern: ^/api
+            pattern: ^/
             stateless: true
             jwt: ~
             # activate different ways to authenticate
