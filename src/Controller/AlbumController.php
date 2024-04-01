@@ -51,6 +51,7 @@ class AlbumController extends AbstractController
     public function new(Request $request, GenerateId $generateId): JsonResponse
     {
         $existAlbum = $this->repository->findOneBy(["nom" => $request->get('nom')]);
+        $artist = $this->artistRepository->findOneBy(["User_idUser" => $this->getUser()]);
 
         if ($existAlbum) {
             return $this->json([
@@ -64,7 +65,7 @@ class AlbumController extends AbstractController
             ->setNom($request->get('nom'))
             ->setCateg($request->get('categ'))
             ->setCover($request->get('cover'))
-            ->setArtistUserIdUser($this->artistRepository->find($request->get('idartist')));
+            ->setArtistUserIdUser($artist);
 
         $errors = $this->validator->validate($album);
         if (count($errors) > 0) {

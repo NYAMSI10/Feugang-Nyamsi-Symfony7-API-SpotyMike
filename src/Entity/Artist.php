@@ -25,7 +25,7 @@ class Artist
     private ?User $User_idUser = null;
 
     #[Groups(["getSongs"])]
-    #[ORM\Column(length: 90, unique:true)]
+    #[ORM\Column(length: 90, unique: true)]
     #[Assert\NotBlank(message: 'fullname')]
     #[Assert\NotNull(message: 'fullname')]
     private ?string $fullname = null;
@@ -41,11 +41,11 @@ class Artist
     private ?string $description = null;
 
     #[Groups(["getArtist"])]
-    #[ORM\ManyToMany(targetEntity: Song::class, mappedBy: 'Artist_idUser')]
+    #[ORM\ManyToMany(targetEntity: Song::class, mappedBy: 'Artist_idUser', cascade: ['persist', 'remove'])]
     private Collection $songs;
 
     #[Groups(["getArtist"])]
-    #[ORM\OneToMany(targetEntity: Album::class, mappedBy: 'artist_User_idUser')]
+    #[ORM\OneToMany(targetEntity: Album::class, mappedBy: 'artist_User_idUser', cascade: ['persist', 'remove'])]
     private Collection $albums;
 
     #[Groups(["getArtist"])]

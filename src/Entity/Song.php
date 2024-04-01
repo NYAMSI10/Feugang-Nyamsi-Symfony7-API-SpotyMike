@@ -19,7 +19,7 @@ class Song
 
 
     #[ORM\Column(length: 90, unique: true)]
-    #[Groups(["getSongs", "getAlbums","getArtist"])]
+    #[Groups(["getSongs", "getAlbums", "getArtist"])]
     private ?string $idSong = null;
 
     #[Groups(["getSongs", "getAlbums"])]
@@ -31,7 +31,7 @@ class Song
     private ?string $url = null;
 
 
-    #[Groups(["getSongs", "getAlbums","getArtist"])]
+    #[Groups(["getSongs", "getAlbums", "getArtist"])]
     #[ORM\Column(length: 125)]
     private ?string $cover = null;
 
@@ -47,7 +47,7 @@ class Song
     #[ORM\ManyToOne(inversedBy: 'Song_idSong')]
     private ?PlaylistHasSong $playlistHasSong = null;
 
-    #[Groups(["getSongs","getArtist"])]
+    #[Groups(["getSongs", "getArtist"])]
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
     private ?\DateTimeInterface $createdAt = null;
 
@@ -55,7 +55,6 @@ class Song
     {
         $this->Artist_idUser = new ArrayCollection();
         $this->createdAt = new \DateTimeImmutable();
-        
     }
 
     public function getId(): ?int
@@ -183,5 +182,3 @@ class Song
         return $this;
     }
 }
-
-

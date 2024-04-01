@@ -53,48 +53,52 @@ class ArtistController extends AbstractController
 
     }*/
 
-    #[Route('/artist/{fullname}', name: 'artist_new',  methods: ['POST','GET'])]
-    public function new(Request $request,string $fullname = 'none'): JsonResponse
+    #[Route('/artist/{fullname}', name: 'artist_new',  methods: ['POST', 'GET'])]
+    public function new(Request $request, string $fullname = 'none'): JsonResponse
     {
         if ($request->getMethod() == 'POST') {
             $fullname = $request->request->get('fullname');
             $label = $request->get('label');
             $description = $request->get('description');
 
-            if(!isset($fullname) || !isset($label)) {
+            if (!isset($fullname) || !isset($label)) {
                 $data = $this->serializer->serialize(
-                    ['error' => true,'message' => "Une ou plusieurs données obligatoires sont manquantes"], 
-                    'json'); 
-                
+                    ['error' => true, 'message' => "Une ou plusieurs données obligatoires sont manquantes"],
+                    'json'
+                );
+
                 return new JsonResponse($data, Response::HTTP_BAD_REQUEST, [], true);
             }
 
-            $user = $this->entityManager->getRepository(User::class)->findOneBy(['email' =>$this->getUser()->getUserIdentifier()]);
+            $user = $this->entityManager->getRepository(User::class)->findOneBy(['email' => $this->getUser()->getUserIdentifier()]);
 
             if (in_array('ROLE_ARTIST', $user->getRoles(), true)) {
                 $data = $this->serializer->serialize(
-                    ['error' => true,'message' => "Un compte utilisateur est déjà un compte artiste"], 
-                    'json');
+                    ['error' => true, 'message' => "Un compte utilisateur est déjà un compte artiste"],
+                    'json'
+                );
                 return new JsonResponse($data, Response::HTTP_CONFLICT, [], true);
             }
 
             $today = new \DateTime();
             $age = $today->diff($user->getDateBirth())->y;
 
-            if($age < 16) {
+            if ($age < 16) {
                 $data = $this->serializer->serialize(
-                    ['error' => true,'message' => "L'age de l'utilisateur ne permet pas(16 ans)"], 
-                    'json'); 
-                
+                    ['error' => true, 'message' => "L'age de l'utilisateur ne permet pas(16 ans)"],
+                    'json'
+                );
+
                 return new JsonResponse($data, Response::HTTP_CONFLICT, [], true);
             }
 
             $searchArtist = $this->repository->findOneBy(['fullname' => $fullname]);
-            if( $searchArtist) {
+            if ($searchArtist) {
                 $data = $this->serializer->serialize(
-                    ['error' => true,'message' => "Un utilisateur ayant ce nom d'artiste déjà enregistré"], 
-                    'json'); 
-                
+                    ['error' => true, 'message' => "Un utilisateur ayant ce nom d'artiste déjà enregistré"],
+                    'json'
+                );
+
                 return new JsonResponse($data, Response::HTTP_CONFLICT, [], true);
             }
 
@@ -104,8 +108,7 @@ class ArtistController extends AbstractController
                 $artist->setUserIdUser($user);
                 $artist->setFullname($fullname);
                 $artist->setLabel($label);
-                $artist->setDescription(isset($description)?$description:'');
-
+                $artist->setDescription(isset($description) ? $description : '');
                 $errors = $this->validator->validate($artist);
                 if (count($errors) > 0) {
                     $errorMessages = [];
@@ -113,48 +116,51 @@ class ArtistController extends AbstractController
                         $errorMessages[] = $error->getMessage();
                     }
                     $data = $this->serializer->serialize(
-                        ['error' => true,'message' => "Une ou plusieurs donnees sont erronees",'data' => $errorMessages], 
-                        'json'); 
-                    
+                        ['error' => true, 'message' => "Une ou plusieurs donnees sont erronees", 'data' => $errorMessages],
+                        'json'
+                    );
+
                     return new JsonResponse($data, Response::HTTP_CONFLICT, [], true);
                 }
-                
+
                 $this->entityManager->persist($artist);
                 $this->entityManager->flush();
 
                 $data = $this->serializer->serialize(
-                    ['error' => false,'message' => "Votre inscription a bien été pris en compte"], 
-                    'json'); 
-                
+                    ['error' => false, 'message' => "Votre inscription a bien été pris en compte"],
+                    'json'
+                );
+
                 return new JsonResponse($data, Response::HTTP_CREATED, [], true);
-            }  catch (\Exception $e) {
-                return $this->json(['errors' => $e->getMessage(),'message' => 'An error occurred'], Response::HTTP_INTERNAL_SERVER_ERROR);
+            } catch (\Exception $e) {
+                return $this->json(['errors' => $e->getMessage(), 'message' => 'An error occurred'], Response::HTTP_INTERNAL_SERVER_ERROR);
             }
-        
         } else {
-            if($fullname == 'none') {
+            if ($fullname == 'none') {
                 $data = $this->serializer->serialize(
-                    ['error' => true,'message' => "Nom de l'artiste manquant"], 
-                    'json'); 
-                
+                    ['error' => true, 'message' => "Nom de l'artiste manquant"],
+                    'json'
+                );
+
                 return new JsonResponse($data, Response::HTTP_BAD_REQUEST, [], true);
             }
-            
-    
+
+
             $artist = $this->repository->findOneBy(['fullname' => $fullname]);
-            if(!$artist) {
+            if (!$artist) {
                 $data = $this->serializer->serialize(
-                    ['error' => true,'message' => "Une ou plusieurs données erronées"], 
-                    'json'); 
-                
+                    ['error' => true, 'message' => "Une ou plusieurs données erronées"],
+                    'json'
+                );
+
                 return new JsonResponse($data, Response::HTTP_CONFLICT, [], true);
             }
-            
-            
-            
+
+
+
             $data = $this->serializer->serialize(
-                ['error' => false,'artist' =>   $artist], 
-                'json', 
+                ['error' => false, 'artist' =>   $artist],
+                'json',
                 [
                     'groups' => 'getArtist',
                     AbstractNormalizer::CALLBACKS => [
@@ -168,8 +174,9 @@ class ArtistController extends AbstractController
                             return $innerObject instanceof \DateTimeInterface ? $innerObject->format('d-m-Y') : '';
                         }
                     ]
-            ]); 
-            
+                ]
+            );
+
             $dataArray = json_decode($data, true);
             $dataArray['artist'] = array_merge($dataArray['artist']['User_idUser'], $dataArray['artist']);
             unset($dataArray['artist']['User_idUser']);
@@ -180,7 +187,7 @@ class ArtistController extends AbstractController
         }
     }
 
-     /*#[Route('/artist/{!fullname}', name: 'artist_show', methods: ['GET'])]
+    /*#[Route('/artist/{!fullname}', name: 'artist_show', methods: ['GET'])]
     public function show(Request $request): JsonResponse
     {
         $fullname = $request->get("fullname");
@@ -264,7 +271,4 @@ class ArtistController extends AbstractController
             ],Response::HTTP_OK);
     }
     */
-
-
-
 }

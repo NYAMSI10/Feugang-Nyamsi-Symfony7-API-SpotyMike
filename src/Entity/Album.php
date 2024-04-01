@@ -20,27 +20,27 @@ class Album
     private ?int $id = null;
 
     #[ORM\Column(length: 90)]
-    #[Groups(["getAlbums","getSongs","getArtist"])]
+    #[Groups(["getAlbums", "getSongs", "getArtist"])]
     private ?string $idAlbum = null;
 
     #[ORM\Column(length: 90)]
     #[Assert\NotBlank(message: 'The name must not be empty')]
     #[Assert\NotNull(message: 'The name must not be null')]
-    #[Groups(["getAlbums","getArtist"])]
+    #[Groups(["getAlbums", "getArtist"])]
     private ?string $nom = null;
 
     #[ORM\Column(length: 20)]
     #[Assert\NotBlank(message: 'The category must not be empty')]
     #[Assert\NotNull(message: 'The category must not be null')]
-    #[Groups(["getAlbums","getSongs","getArtist"])]
+    #[Groups(["getAlbums", "getSongs", "getArtist"])]
     private ?string $categ = null;
 
     #[ORM\Column(length: 125)]
-    #[Groups(["getAlbums","getSongs","getArtist"])]
+    #[Groups(["getAlbums", "getSongs", "getArtist"])]
     private ?string $cover = null;
 
     #[ORM\Column]
-    #[Groups(["getSongs","getArtist"])]
+    #[Groups(["getSongs", "getArtist"])]
     #[Assert\Type(
         type: 'integer',
         message: 'The value {{ value }} is not a valid {{ type }}.',
@@ -50,15 +50,9 @@ class Album
     #[ORM\ManyToOne(inversedBy: 'albums')]
     private ?Artist $artist_User_idUser = null;
 
-    #[ORM\OneToMany(targetEntity: Song::class, mappedBy: 'album')]
+    #[ORM\OneToMany(targetEntity: Song::class, mappedBy: 'album', cascade: ['persist', 'remove'])]
     #[Groups(["getAlbums"])]
     private Collection $songs;
-
-    #[ORM\Column(nullable: true)]
-
-    private ?\DateTimeImmutable $createAt = null;
-
-
 
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
@@ -179,11 +173,14 @@ class Album
     }
 
 
-
-    public function getCreateAt(): ?\DateTimeImmutable
+    public function setCreatedAt(\DateTimeImmutable $createdAt): static
     {
-        return $this->createAt;
-    }
+        $this->createdAt = $createdAt;
 
-    
+        return $this;
+    }
+    public function getCreatedAt(): ?\DateTimeImmutable
+    {
+        return $this->createdAt;
+    }
 }

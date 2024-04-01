@@ -25,17 +25,16 @@ class LoginController extends AbstractController
     private $serializer;
     private $cache;
 
-    public function __construct(EntityManagerInterface $entityManager,JWTTokenManagerInterface $jwtManager,SerializerInterface $serializer,CacheItemPoolInterface $cache)
+    public function __construct(EntityManagerInterface $entityManager, JWTTokenManagerInterface $jwtManager, SerializerInterface $serializer, CacheItemPoolInterface $cache)
     {
         $this->entityManager = $entityManager;
         $this->repository = $entityManager->getRepository(User::class);
         $this->jwtManager = $jwtManager;
         $this->serializer = $serializer;
         $this->cache = $cache;
-
     }
 
-    #[Route('/login', name: 'app_login_get',methods:'GET')]
+    #[Route('/login', name: 'app_login_get', methods: 'GET')]
     public function index(): JsonResponse
     {
         return $this->json([
@@ -44,51 +43,53 @@ class LoginController extends AbstractController
         ]);
     }
 
-    #[Route('/login', name: 'app_login_post',methods:['POST','PUT'])]
-    public function login(Request $request,UserPasswordHasherInterface $passwordHasher): JsonResponse
+    #[Route('/login', name: 'app_login_post', methods: ['POST', 'PUT'])]
+    public function login(Request $request, UserPasswordHasherInterface $passwordHasher): JsonResponse
     {
-        $email = $request->request->get('Email');
-        $password = $request->request->get('Password');
+        $email = $request->request->get('email');
+        $password = $request->request->get('password');
 
         $encodedEmail = urlencode($email);
 
-        if(!isset($email) || !isset($password)) {
+        if (!isset($email) || !isset($password)) {
             $data = $this->serializer->serialize(
-                ['error' => true,'message' => "Email/password manquants"], 
-                'json'); 
-            
+                ['error' => true, 'message' => "Email/password manquants"],
+                'json'
+            );
+
             return new JsonResponse($data, Response::HTTP_BAD_REQUEST, [], true);
         }
 
-        if (!filter_var($email, FILTER_VALIDATE_EMAIL) ) {
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             $data = $this->serializer->serialize(
-                ['error' => true,'message' => "Email/password incorret"], 
-                'json'); 
-            
+                ['error' => true, 'message' => "Email/password incorret"],
+                'json'
+            );
+
             return new JsonResponse($data, Response::HTTP_BAD_REQUEST, [], true);
         }
 
-        if ($this->cache->getItem('blocked_user_'.$encodedEmail)->isHit()) {
-            return new JsonResponse(['error' => true,'message' => "Trop de tentative sur l'email ".$email." (5max) - Veuillez patienter(2min)"], Response::HTTP_TOO_MANY_REQUESTS);
+        if ($this->cache->getItem('blocked_user_' . $encodedEmail)->isHit()) {
+            return new JsonResponse(['error' => true, 'message' => "Trop de tentative sur l'email " . $email . " (5max) - Veuillez patienter(2min)"], Response::HTTP_TOO_MANY_REQUESTS);
         }
 
-        $attempts = $this->cache->getItem('login_attempts_'.$encodedEmail)->get() ;
+        $attempts = $this->cache->getItem('login_attempts_' . $encodedEmail)->get();
 
-        
+
         if ($attempts >= 5) {
-            $cacheItem_block =  $this->cache->getItem('blocked_user_'.$encodedEmail);
+            $cacheItem_block =  $this->cache->getItem('blocked_user_' . $encodedEmail);
             if (!$cacheItem_block->isHit()) {
                 $cacheItem_block->set(true)->expiresAfter(120);
                 $this->cache->save($cacheItem_block);
             }
-            return new JsonResponse(['message' => "Trop de tentative sur l'email ".$email." (5max) - Veuillez patienter(2min)"], Response::HTTP_TOO_MANY_REQUESTS);
+            return new JsonResponse(['message' => "Trop de tentative sur l'email " . $email . " (5max) - Veuillez patienter(2min)"], Response::HTTP_TOO_MANY_REQUESTS);
         }
 
 
         $user = $this->repository->findOneBy(['email' => $email]);
-        
+
         if (!$user || !$passwordHasher->isPasswordValid($user, $password)) {
-            $cacheItem_attempt = $this->cache->getItem('login_attempts_'.$encodedEmail);
+            $cacheItem_attempt = $this->cache->getItem('login_attempts_' . $encodedEmail);
             if (!$cacheItem_attempt->isHit()) {
                 $cacheItem_attempt->set(1)->expiresAfter(120);
                 $this->cache->save($cacheItem_attempt);
@@ -98,23 +99,26 @@ class LoginController extends AbstractController
             }
 
             $data = $this->serializer->serialize(
-                ['error' => true,'message' => "Email/password incorret"], 
-                'json'); 
-            
+                ['error' => true, 'message' => "Email/password incorret"],
+                'json'
+            );
+
             return new JsonResponse($data, Response::HTTP_BAD_REQUEST, [], true);
-         }
-         
-        $this->cache->deleteItem('login_attempts_'.$encodedEmail);
-        
+        }
+
+        $this->cache->deleteItem('login_attempts_' . $encodedEmail);
+
         // Generate JWT token
         $token = $this->jwtManager->create($user);
 
-        
+
         $data = $this->serializer->serialize(
-            ['error' => false,
-            'message' => "L'utilisateur a été authentifié avec succès",
-            'user' => $user,
-            'token' => $token], 
+            [
+                'error' => false,
+                'message' => "L'utilisateur a été authentifié avec succès",
+                'user' => $user,
+                'token' => $token
+            ],
             'json',
             [
                 'groups' => 'getUsers',
@@ -126,8 +130,9 @@ class LoginController extends AbstractController
                         return $innerObject instanceof \DateTimeInterface ? $innerObject->format('d-m-Y') : '';
                     }
                 ]
-        ]); 
-        
+            ]
+        );
+
         return new JsonResponse($data, Response::HTTP_OK, [], true);
     }
 

@@ -13,7 +13,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
 
-class User implements UserInterface,PasswordAuthenticatedUserInterface
+class User implements UserInterface, PasswordAuthenticatedUserInterface
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
@@ -28,16 +28,16 @@ class User implements UserInterface,PasswordAuthenticatedUserInterface
     #[ORM\Column(length: 55)]
     #[Assert\NotBlank(message: 'firstname')]
     #[Assert\NotNull(message: 'firstname')]
-    #[Assert\Length(max: 55,maxMessage: 'firstname')]
-    #[Groups(["getUsers","getLogin","getArtist"])]
+    #[Assert\Length(max: 55, maxMessage: 'firstname')]
+    #[Groups(["getUsers", "getLogin", "getArtist"])]
     private ?string $firstname = null;
 
     #[ORM\Column(length: 80, unique: true)]
     #[Assert\NotBlank(message: 'email')]
     #[Assert\NotNull(message: 'email')]
     #[Assert\Email(message: 'email')]
-    #[Assert\Length(max: 55,maxMessage: 'email')]
-    #[Groups(["getUsers","getLogin"])]
+    #[Assert\Length(max: 55, maxMessage: 'email')]
+    #[Groups(["getUsers", "getLogin"])]
     private ?string $email = null;
 
     #[ORM\Column(length: 90)]
@@ -46,44 +46,52 @@ class User implements UserInterface,PasswordAuthenticatedUserInterface
     private ?string $password = null;
 
     #[ORM\Column(length: 15, nullable: true)]
-    #[Groups(["getUsers","getLogin"])]
-    #[Assert\Regex(pattern:'/^(?:\+33|0)[0-9]{9}$/')]
-    #[Assert\Length(min:10,max: 12,maxMessage: 'Telephone',minMessage:'Telephone',exactMessage:'Telephone')]
+    #[Groups(["getUsers", "getLogin"])]
+    #[Assert\Regex(pattern: '/^(?:\+33|0)[0-9]{9}$/')]
+    #[Assert\Length(min: 10, max: 12, maxMessage: 'Telephone', minMessage: 'Telephone', exactMessage: 'Telephone')]
     private ?string $tel = null;
 
-    #[ORM\Column]
-    #[Groups(["getUsers","getLogin"])]
-    private ?\DateTimeImmutable $createAt = null;
+    // #[ORM\Column]
+    // #[Groups(["getUsers", "getLogin"])]
+    // private ?\DateTimeImmutable $createdAt = null;
 
-    #[ORM\Column(type: Types::DATETIME_MUTABLE)]
-    #[Groups(["getUsers"])]
-    private ?\DateTimeInterface $updateAt = null;
+    // #[ORM\Column(type: Types::DATETIME_MUTABLE)]
+    // #[Groups(["getUsers"])]
+    // private ?\DateTimeInterface $updatedAt = null;
 
     #[ORM\OneToOne(mappedBy: 'User_idUser', cascade: ['persist', 'remove'])]
     #[Groups(["getLogin"])]
     private ?Artist $artist = null;
 
     #[ORM\Column(length: 55)]
-    #[Groups(["getUsers","getLogin","getArtist"])]
-    #[Assert\Length(max: 55,maxMessage: 'lastname')]
+    #[Groups(["getUsers", "getLogin", "getArtist"])]
+    #[Assert\Length(max: 55, maxMessage: 'lastname')]
     private ?string $lastname = null;
 
     #[ORM\Column(type: Types::DATE_MUTABLE)]
-    #[Groups(["getUsers","getLogin","getArtist"])]
+    #[Groups(["getUsers", "getLogin", "getArtist"])]
     private ?\DateTimeInterface $dateBirth = null;
 
     #[ORM\Column(length: 30, nullable: true)]
-    #[Groups(["getUsers","getLogin","getArtist"])]
-    #[Assert\Length(max: 30,maxMessage: 'sexe')]
+    #[Groups(["getUsers", "getLogin", "getArtist"])]
+    #[Assert\Length(max: 30, maxMessage: 'sexe')]
     private ?string $sexe = null;
 
     #[ORM\Column(type: 'json')]
     private array $roles = [];
 
+    #[ORM\Column]
+    #[Groups(["getUsers", "getLogin"])]
+    private ?\DateTimeImmutable $createdAt = null;
+
+    #[ORM\Column]
+    #[Groups(["getUsers"])]
+    private ?\DateTimeImmutable $updatedAt = null;
+
     public function __construct()
     {
-        $this->updateAt = new \DateTimeImmutable();
-        $this->createAt = new \DateTimeImmutable();
+        $this->updatedAt = new \DateTimeImmutable();
+        $this->createdAt = new \DateTimeImmutable();
         //$this->idUser = random_bytes(10);
     }
 
@@ -152,29 +160,7 @@ class User implements UserInterface,PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    public function getCreateAt(): ?\DateTimeImmutable
-    {
-        return $this->createAt;
-    }
 
-    public function setCreateAt(\DateTimeImmutable $createAt): static
-    {
-        $this->createAt = $createAt;
-
-        return $this;
-    }
-
-    public function getUpdateAt(): ?\DateTimeInterface
-    {
-        return $this->updateAt;
-    }
-
-    public function setUpdateAt(\DateTimeInterface $updateAt): static
-    {
-        $this->updateAt = $updateAt;
-
-        return $this;
-    }
 
     public function getArtist(): ?Artist
     {
@@ -229,7 +215,7 @@ class User implements UserInterface,PasswordAuthenticatedUserInterface
         return $this;
     }
 
-     /**
+    /**
      * The public representation of the user (e.g. a username, an email address, etc.)
      *
      * @see UserInterface
@@ -270,5 +256,29 @@ class User implements UserInterface,PasswordAuthenticatedUserInterface
     {
         // If you store any temporary, sensitive data on the user, clear it here
         // $this->plainPassword = null;
+    }
+
+    public function getCreatedAt(): ?\DateTimeImmutable
+    {
+        return $this->createdAt;
+    }
+
+    public function setCreatedAt(\DateTimeImmutable $createdAt): static
+    {
+        $this->createdAt = $createdAt;
+
+        return $this;
+    }
+
+    public function getUpdatedAt(): ?\DateTimeImmutable
+    {
+        return $this->updatedAt;
+    }
+
+    public function setUpdatedAt(\DateTimeImmutable $updatedAt): static
+    {
+        $this->updatedAt = $updatedAt;
+
+        return $this;
     }
 }
