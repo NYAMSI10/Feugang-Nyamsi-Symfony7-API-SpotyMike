@@ -3,24 +3,15 @@
 namespace App\Controller;
 
 use App\Entity\User;
-use Doctrine\ORM\EntityManager;
-use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
-use Lexik\Bundle\JWTAuthenticationBundle\Exception\JWTDecodeFailureException;
-use Lexik\Bundle\JWTAuthenticationBundle\Response\JWTAuthenticationFailureResponse;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Attribute\Route;
-use Symfony\Component\Security\Core\Exception\AccessDeniedException;
-use Symfony\Component\Security\Core\Exception\InsufficientAuthenticationException;
 use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
-use Symfony\Component\Serializer\Normalizer\GetSetMethodNormalizer;
-use Symfony\Component\Serializer\Serializer;
-use Symfony\Component\Validator\Constraints\Json;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 
@@ -297,7 +288,6 @@ class UserController extends AbstractController
     #[Route('/user/{id}', name: 'user_delete', methods: ['DELETE'])]
     public function delete(Request $request): JsonResponse
     {
-        $user = $this->repository->findOneBy(['email' => $this->getUser()->getUserIdentifier()]);
 
         $user = $this->repository->find($request->get('id'));
         if (!$user) {
@@ -309,16 +299,8 @@ class UserController extends AbstractController
 
             return new JsonResponse($data, Response::HTTP_NOT_FOUND, [], true);
         }
-
-
         $this->entityManager->remove($user);
         $this->entityManager->flush();
-
-
-        $this->entityManager->remove($user);
-        $this->entityManager->flush();
-
-
 
         return $this->json([
             'error' => false,
