@@ -20,19 +20,19 @@ class Playlist
     // #[ORM\Id]
     #[ORM\Column(length: 90)]
     private ?string $idPlaylist = null;
-    #[Groups(["getSongs", "getPlaylist"])]
+    #[Groups(["getPlaylist"])]
     #[ORM\Column(length: 50)]
     private ?string $title = null;
 
     #[ORM\Column]
-    #[Groups(["getSongs", "getPlaylist"])]
+    #[Groups(["getPlaylist"])]
     private ?bool $public = true;
 
     #[ORM\Column]
-    private ?\DateTimeImmutable $createAt = null;
+    private ?\DateTimeImmutable $createdAt = null;
 
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
-    private ?\DateTimeInterface $updateAt = null;
+    private ?\DateTimeInterface $updatedAt = null;
 
     #[Groups(["getPlaylist"])]
     #[ORM\ManyToOne(inversedBy: 'Playlist_idPlaylist')]
@@ -40,9 +40,8 @@ class Playlist
 
     public function __construct()
     {
-        $this->createAt = new \DateTimeImmutable();
-        $this->updateAt = new \DateTimeImmutable();
-
+        $this->createdAt = new \DateTimeImmutable();
+        $this->updatedAt = new \DateTimeImmutable();
     }
 
     public function getId(): ?int
@@ -86,26 +85,26 @@ class Playlist
         return $this;
     }
 
-    public function getCreateAt(): ?\DateTimeImmutable
+    public function getCreatedAt(): ?\DateTimeImmutable
     {
-        return $this->createAt;
+        return $this->createdAt;
     }
 
-    public function setCreateAt(\DateTimeImmutable $createAt): static
+    public function setCreatedAt(\DateTimeImmutable $createdAt): static
     {
-        $this->createAt = $createAt;
+        $this->createdAt = $createdAt;
 
         return $this;
     }
 
-    public function getUpdateAt(): ?\DateTimeInterface
+    public function getUpdatedAt(): ?\DateTimeInterface
     {
-        return $this->updateAt;
+        return $this->updatedAt;
     }
 
-    public function setUpdateAt(\DateTimeInterface $updateAt): static
+    public function setUpdatedAt(\DateTimeInterface $updatedAt): static
     {
-        $this->updateAt = $updateAt;
+        $this->updatedAt = $updatedAt;
 
         return $this;
     }

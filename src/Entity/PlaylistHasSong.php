@@ -15,7 +15,7 @@ class PlaylistHasSong
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(["getSongs","getPlaylist"])]
+    #[Groups(["getPlaylist"])]
     private ?int $id = null;
 
     #[ORM\OneToMany(targetEntity: Playlist::class, mappedBy: 'playlistHasSong')]
@@ -24,22 +24,21 @@ class PlaylistHasSong
     private Collection $Song_idSong;
 
     #[ORM\Column(nullable: true)]
-    #[Groups(["getSongs","getPlaylist"])]
+    #[Groups(["getPlaylist"])]
     private ?bool $download = null;
 
     #[ORM\Column(type: Types::SMALLINT, nullable: true)]
-    #[Groups(["getSongs","getPlaylist"])]
+    #[Groups(["getPlaylist"])]
     private ?int $position = null;
 
     #[ORM\Column]
-    private ?\DateTimeImmutable $createAt = null;
+    private ?\DateTimeImmutable $createdAt = null;
 
     public function __construct()
     {
         $this->Playlist_idPlaylist = new ArrayCollection();
         $this->Song_idSong = new ArrayCollection();
-        $this->createAt = new \DateTimeImmutable();
-
+        $this->createdAt = new \DateTimeImmutable();
     }
 
     public function getId(): ?int
@@ -131,14 +130,14 @@ class PlaylistHasSong
         return $this;
     }
 
-    public function getCreateAt(): ?\DateTimeImmutable
+    public function getCreatedAt(): ?\DateTimeImmutable
     {
-        return $this->createAt;
+        return $this->createdAt;
     }
 
-    public function setCreateAt(\DateTimeImmutable $createAt): static
+    public function setCreatedAt(\DateTimeImmutable $createdAt): static
     {
-        $this->createAt = $createAt;
+        $this->createdAt = $createdAt;
 
         return $this;
     }

@@ -5,56 +5,71 @@ namespace App\Entity;
 use App\Repository\AlbumRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use JsonSerializable;
+use Symfony\Component\Serializer\Annotation\Context;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Serializer\Annotation\SerializedName;
+use Symfony\Component\Serializer\Normalizer\DateTimeNormalizer;
 
 #[ORM\Entity(repositoryClass: AlbumRepository::class)]
-class Album implements JsonSerializable
+class Album
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
     private ?int $id = null;
 
-    #[Groups(["getSongs"])]
     #[ORM\Column(length: 90)]
+    #[Groups(["getAlbums","getAlbumArtist"])]
+    #[SerializedName('id')]
     private ?string $idAlbum = null;
 
     #[ORM\Column(length: 90)]
-    #[Assert\NotBlank(message: 'The name must not be empty')]
-    #[Assert\NotNull(message: 'The name must not be null')]
+    #[Assert\NotBlank(message: 'nom')]
+    #[Assert\NotNull(message: 'nom')]
+    #[Groups(["getAlbums","getAlbumArtist"])]
     private ?string $nom = null;
 
     #[ORM\Column(length: 20)]
-    #[Assert\NotBlank(message: 'The category must not be empty')]
-    #[Assert\NotNull(message: 'The category must not be null')]
-    #[Groups(["getSongs"])]
+    #[Assert\NotBlank(message: 'category')]
+    #[Assert\NotNull(message: 'category')]
+    #[Groups(["getAlbums","getAlbumArtist"])]
     private ?string $categ = null;
 
-
-    #[ORM\Column(length: 125)]
-    #[Groups(["getSongs"])]
+    #[ORM\Column(length: 125, nullable: true)]
+    #[Groups(["getAlbums","getAlbumArtist"])]
     private ?string $cover = null;
 
     #[ORM\Column]
-    #[Groups(["getSongs"])]
+    #[Groups(["getAlbums","getAlbumArtist"])]
     #[Assert\Type(
         type: 'integer',
-        message: 'The value {{ value }} is not a valid {{ type }}.',
+        message: 'year',
     )]
     private ?int $year = 2024;
 
     #[ORM\ManyToOne(inversedBy: 'albums')]
     private ?Artist $artist_User_idUser = null;
 
-    #[ORM\OneToMany(targetEntity: Song::class, mappedBy: 'album')]
-    private Collection $song_idSong;
+    #[ORM\OneToMany(targetEntity: Song::class, mappedBy: 'album', cascade: ['persist', 'remove'])]
+    #[Groups(["getAlbums"])]
+    private Collection $songs;
+
+    #[Context([DateTimeNormalizer::FORMAT_KEY =>' d-m-Y'])]
+    #[ORM\Column(type: Types::DATETIME_MUTABLE)]
+    #[Groups(["getAlbums","getAlbumArtist"])]
+    private ?\DateTimeInterface $createdAt = null;
+
+    #[ORM\Column]
+    private ?bool $visibility = true;
 
     public function __construct()
     {
-        $this->song_idSong = new ArrayCollection();
+        $this->songs = new ArrayCollection();
+        $this->createdAt = new \DateTimeImmutable();
     }
 
     public function getId(): ?int
@@ -103,7 +118,7 @@ class Album implements JsonSerializable
         return $this->cover;
     }
 
-    public function setCover(string $cover): static
+    public function setCover(?string $cover): static
     {
         $this->cover = $cover;
 
@@ -137,27 +152,27 @@ class Album implements JsonSerializable
     /**
      * @return Collection<int, Song>
      */
-    public function getSongIdSong(): Collection
+    public function getSongs(): Collection
     {
-        return $this->song_idSong;
+        return $this->songs;
     }
 
-    public function addSongIdSong(Song $songIdSong): static
+    public function addSongs(Song $songs): static
     {
-        if (!$this->song_idSong->contains($songIdSong)) {
-            $this->song_idSong->add($songIdSong);
-            $songIdSong->setAlbum($this);
+        if (!$this->songs->contains($songs)) {
+            $this->songs->add($songs);
+            $songs->setAlbum($this);
         }
 
         return $this;
     }
 
-    public function removeSongIdSong(Song $songIdSong): static
+    public function removeSongs(Song $songs): static
     {
-        if ($this->song_idSong->removeElement($songIdSong)) {
+        if ($this->songs->removeElement($songs)) {
             // set the owning side to null (unless already changed)
-            if ($songIdSong->getAlbum() === $this) {
-                $songIdSong->setAlbum(null);
+            if ($songs->getAlbum() === $this) {
+                $songs->setAlbum(null);
             }
         }
 
@@ -165,26 +180,27 @@ class Album implements JsonSerializable
     }
 
 
-    private function serializeSongs()
+    public function setCreatedAt(\DateTimeImmutable $createdAt): static
     {
-        $songIds = [];
-        foreach ($this->getSongIdSong() as $song) {
-            $songIds[] = $song->getId(); // Assuming getId() returns the ID of the album
-        }
-        return $songIds;
+        $this->createdAt = $createdAt;
+
+        return $this;
+    }
+    public function getCreatedAt(): ?\DateTimeImmutable
+    {
+        return $this->createdAt instanceof \DateTimeInterface ? \DateTimeImmutable::createFromMutable($this->createdAt) : null;
+        //return $this->createdAt;
     }
 
-    public function jsonSerialize() {
-        return [
-            "id" => $this->getId(),
-            "idAlbum" => $this->getIdAlbum(),
-            "artist" => $this->getArtistUserIdUser(),
-            "nom" => $this->getNom(),
-            "categ" => $this->getCateg(),
-            "cover" => $this->getCover(),
-            "year" => $this->getYear(),
-            "songs" => $this->serializeSongs(),
-            
-        ];
+    public function isVisibility(): ?bool
+    {
+        return $this->visibility;
+    }
+
+    public function setVisibility(bool $visibility): static
+    {
+        $this->visibility = $visibility;
+
+        return $this;
     }
 }
