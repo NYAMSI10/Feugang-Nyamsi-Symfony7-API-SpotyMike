@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\User;
+use App\Service\GenerateId;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -91,7 +92,7 @@ class UserController extends AbstractController
     }
 
     #[Route('/register', name: 'user_new', methods: 'POST')]
-    public function new(Request $request): JsonResponse
+    public function new(Request $request, GenerateId $generateId): JsonResponse
     {
         $firstname = $request->get('firstname');
         $lastname = $request->get('lastname');
@@ -134,7 +135,7 @@ class UserController extends AbstractController
         }
         try {
             $user = new User();
-            $user->setIdUser(md5(uniqid($email, true)));
+            $user->setIdUser($generateId->randId());
             $user->setFirstname($firstname);
             $user->setLastname($lastname);
             $user->setEmail($email);
