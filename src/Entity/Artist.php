@@ -7,9 +7,11 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Context;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Serializer\Annotation\Groups;
 use Symfony\Component\Serializer\Annotation\SerializedName;
+use Symfony\Component\Serializer\Normalizer\DateTimeNormalizer;
 
 #[ORM\Entity(repositoryClass: ArtistRepository::class)]
 class Artist
@@ -24,33 +26,34 @@ class Artist
     #[Groups(["getArtist"])]
     private ?User $User_idUser = null;
 
-    #[Groups(["getSongs"])]
+    
     #[ORM\Column(length: 90, unique: true)]
     #[Assert\NotBlank(message: 'fullname')]
     #[Assert\NotNull(message: 'fullname')]
     private ?string $fullname = null;
 
-    #[Groups(["getSongs"])]
+    
     #[ORM\Column(length: 90)]
     #[Assert\NotBlank(message: 'label')]
     #[Assert\NotNull(message: 'label')]
     private ?string $label = null;
 
-    #[Groups(["getSongs"])]
+    
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $description = null;
 
-    #[Groups(["getArtist"])]
+    
     #[ORM\ManyToMany(targetEntity: Song::class, mappedBy: 'Artist_idUser', cascade: ['persist', 'remove'])]
     private Collection $songs;
 
-    #[Groups(["getArtist"])]
+   
     #[ORM\OneToMany(targetEntity: Album::class, mappedBy: 'artist_User_idUser', cascade: ['persist', 'remove'])]
     private Collection $albums;
 
     #[Groups(["getArtist"])]
     #[SerializedName('Artist.createdAt')]
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
+    #[Context([DateTimeNormalizer::FORMAT_KEY =>' d-m-Y'])]
     private ?\DateTimeInterface $createdAt = null;
 
     public function __construct()

@@ -26,7 +26,7 @@ class AppFixtures extends Fixture
         // Création d'un user "normal"
         $user = new User();
         $user->setIdUser("User_" . rand(0, 999));
-        $user->setEmail("user@bookapi.com");
+        $user->setEmail("feugang_ange@yahoo.com");
         $user->setFirstname("Feugang");
         $user->setLastname("Ange");
         $user->setDateBirth(new \DateTime("10-05-1996"));
@@ -34,7 +34,7 @@ class AppFixtures extends Fixture
         $user->setRoles(["ROLE_USER"]);
         $user->setCreatedAt(new \DateTimeImmutable());
         $user->setUpdatedAt(new \DateTimeImmutable());
-        $user->setPassword($this->userPasswordHasher->hashPassword($user, "$2y$" . rand(0, 999999999999999999)));
+        $user->setPassword($this->userPasswordHasher->hashPassword($user,'Admin2024'));
         $manager->persist($user);
 
 
@@ -45,7 +45,7 @@ class AppFixtures extends Fixture
         $userArtist->setLastname("Brice");
         $userArtist->setDateBirth(new \DateTime("10-05-1992"));
         $userArtist->setSexe("Masculin");
-        $userArtist->setRoles(["ROLE_ARTIST"]);
+        $userArtist->setRoles(["ROLE_ARTIST","ROLE_USER"]);
         $userArtist->setCreatedAt(new \DateTimeImmutable());
         $userArtist->setUpdatedAt(new \DateTimeImmutable());
         $userArtist->setPassword($this->userPasswordHasher->hashPassword($userArtist, "password"));
@@ -70,7 +70,21 @@ class AppFixtures extends Fixture
             $album->setYear(date('Y'));
             $album->setArtistUserIdUser($artist);
             $manager->persist($album);
+
+            //Création des songs
+            $song = new Song();
+            $song->setIdSong("Song_" . rand(0, 999));
+            $song->setTitle("Makila" . $i);
+            $song->setUrl("Zouk " . $i);
+            $song->setCover("test" . $i);
+            $song->addArtistIdUser($artist);
+            $song->setAlbum($album);
+            $manager->persist($song);
         }
+
+        
+
+       
 
         $manager->flush();
     }

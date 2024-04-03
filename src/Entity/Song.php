@@ -7,7 +7,10 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Context;
 use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Serializer\Annotation\SerializedName;
+use Symfony\Component\Serializer\Normalizer\DateTimeNormalizer;
 
 #[ORM\Entity(repositoryClass: SongRepository::class)]
 class Song
@@ -19,19 +22,21 @@ class Song
 
 
     #[ORM\Column(length: 90, unique: true)]
-    #[Groups(["getSongs", "getAlbums", "getArtist"])]
+    #[Groups(["getSongs","getSong","getAlbums"])]
+    #[SerializedName('id')]
     private ?string $idSong = null;
 
-    #[Groups(["getSongs", "getAlbums"])]
+    #[Groups(["getSongs","getSong", "getAlbums"])]
     #[ORM\Column(length: 255)]
     private ?string $title = null;
 
-    #[Groups(["getSongs"])]
+    #[Groups(["getSong"])]
     #[ORM\Column(length: 125)]
+    #[SerializedName('stream')]
     private ?string $url = null;
 
 
-    #[Groups(["getSongs", "getAlbums", "getArtist"])]
+    #[Groups(["getSongs","getSong", "getAlbums"])]
     #[ORM\Column(length: 125)]
     private ?string $cover = null;
 
@@ -47,8 +52,9 @@ class Song
     #[ORM\ManyToOne(inversedBy: 'Song_idSong')]
     private ?PlaylistHasSong $playlistHasSong = null;
 
-    #[Groups(["getSongs", "getArtist"])]
+    #[Groups(["getSongs","getSong","getAlbums"])]
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
+    #[Context([DateTimeNormalizer::FORMAT_KEY =>' d-m-Y'])]
     private ?\DateTimeInterface $createdAt = null;
 
     public function __construct()

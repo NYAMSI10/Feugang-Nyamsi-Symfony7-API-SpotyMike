@@ -43,11 +43,11 @@ class LoginController extends AbstractController
         ]);
     }
 
-    #[Route('/login', name: 'app_login_post', methods: ['POST', 'PUT'])]
+    #[Route('/login', name: 'app_login_post', methods: 'POST')]
     public function login(Request $request, UserPasswordHasherInterface $passwordHasher): JsonResponse
     {
-        $email = $request->request->get('email');
-        $password = $request->request->get('password');
+        $email = $request->get('Email');
+        $password = $request->get('Password');
 
         $encodedEmail = urlencode($email);
 
@@ -121,15 +121,7 @@ class LoginController extends AbstractController
             ],
             'json',
             [
-                'groups' => 'getUsers',
-                AbstractNormalizer::CALLBACKS => [
-                    'dateBirth' => function ($innerObject, $outerObject, string $attributeName, string $format = null, array $context = []) {
-                        return $innerObject instanceof \DateTimeInterface ? $innerObject->format('d-m-Y') : '';
-                    },
-                    'createAt' => function ($innerObject, $outerObject, string $attributeName, string $format = null, array $context = []) {
-                        return $innerObject instanceof \DateTimeInterface ? $innerObject->format('d-m-Y') : '';
-                    }
-                ]
+                'groups' => 'getLogin'
             ]
         );
 

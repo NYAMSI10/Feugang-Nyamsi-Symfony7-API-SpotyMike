@@ -2,7 +2,9 @@
 
 namespace App\Controller;
 
+use App\Entity\Album;
 use App\Entity\Artist;
+use App\Entity\Song;
 use App\Entity\User;
 use Doctrine\ORM\EntityManager;
 use App\Repository\UserRepository;
@@ -56,6 +58,7 @@ class ArtistController extends AbstractController
     #[Route('/artist/{fullname}', name: 'artist_new',  methods: ['POST', 'GET'])]
     public function new(Request $request, string $fullname = 'none'): JsonResponse
     {
+        $user = $this->entityManager->getRepository(User::class)->findOneBy(['email' => $this->getUser()->getUserIdentifier()]);
         if ($request->getMethod() == 'POST') {
             $fullname = $request->request->get('fullname');
             $label = $request->get('label');
@@ -69,8 +72,6 @@ class ArtistController extends AbstractController
 
                 return new JsonResponse($data, Response::HTTP_BAD_REQUEST, [], true);
             }
-
-            $user = $this->entityManager->getRepository(User::class)->findOneBy(['email' => $this->getUser()->getUserIdentifier()]);
 
             if (in_array('ROLE_ARTIST', $user->getRoles(), true)) {
                 $data = $this->serializer->serialize(
@@ -89,7 +90,7 @@ class ArtistController extends AbstractController
                     'json'
                 );
 
-                return new JsonResponse($data, Response::HTTP_CONFLICT, [], true);
+                return new JsonResponse($data, Response::HTTP_NOT_ACCEPTABLE, [], true);
             }
 
             $searchArtist = $this->repository->findOneBy(['fullname' => $fullname]);
@@ -103,6 +104,10 @@ class ArtistController extends AbstractController
             }
 
             try {
+                $user->setRoles(["ROLE_ARTIST","ROLE_USER"]);
+                $this->entityManager->persist($user);
+                $this->entityManager->flush();
+                
                 $artist = new Artist();
 
                 $artist->setUserIdUser($user);
@@ -155,25 +160,21 @@ class ArtistController extends AbstractController
 
                 return new JsonResponse($data, Response::HTTP_CONFLICT, [], true);
             }
-
-
-
+            $songs = [];
+            $albums = [];
+            if (in_array('ROLE_ARTIST', $user->getRoles(), true)) {
+                $songs = $this->entityManager->getRepository(Song::class)->findByVisibilityAndArtist($artist);
+                $albums = $this->entityManager->getRepository(Album::class)->findBy(['artist_User_idUser' =>$artist]);
+            }else {
+                $songs = $this->entityManager->getRepository(Song::class)->findByVisibilityAndArtist($artist,true);
+                $albums = $this->entityManager->getRepository(Album::class)->findBy(['artist_User_idUser' =>$artist,'visibility' => true]);
+            }
+           
             $data = $this->serializer->serialize(
-                ['error' => false, 'artist' =>   $artist],
+                ['error' => false, 'artist' =>   $artist,'songs' => $songs,'albums'=>$albums],
                 'json',
                 [
-                    'groups' => 'getArtist',
-                    AbstractNormalizer::CALLBACKS => [
-                        'dateBirth' => function ($innerObject, $outerObject, string $attributeName, string $format = null, array $context = []) {
-                            return $innerObject instanceof \DateTimeInterface ? $innerObject->format('d-m-Y') : '';
-                        },
-                        'Artist.createdAt' => function ($innerObject, $outerObject, string $attributeName, string $format = null, array $context = []) {
-                            return $innerObject instanceof \DateTimeInterface ? $innerObject->format('d-m-Y') : '';
-                        },
-                        'createdAt' => function ($innerObject, $outerObject, string $attributeName, string $format = null, array $context = []) {
-                            return $innerObject instanceof \DateTimeInterface ? $innerObject->format('d-m-Y') : '';
-                        }
-                    ]
+                    'groups' => ['getArtist','getSongs','getAlbumArtist']
                 ]
             );
 

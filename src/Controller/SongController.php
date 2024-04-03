@@ -30,29 +30,39 @@ class SongController extends AbstractController
         $this->serializer = $serializer;
     }
 
-    #[Route('songs', name: 'app_all_song', methods: ['GET'])]
+    /*#[Route('songs', name: 'app_all_song', methods: ['GET'])]
     public function getAllSongs(): JsonResponse
     {
         $songs = $this->repository->findAll();
         $jsonSongList = $this->serializer->serialize($songs, 'json', ['groups' => 'getSongs']);
 
         return new JsonResponse($jsonSongList, Response::HTTP_OK, [], true);
-    }
+    }*/
 
     #[Route('song/{id}', name: 'app_detail_song', methods: ['GET'])]
-    public function getDetailSong(Request $request): JsonResponse
+    public function getDetailSong(Request $request, int $id = 0): JsonResponse
     {
+        $id = $request->get('id');
 
+        if (!isset($id) || $id == 0) {
+            $data = $this->serializer->serialize(
+                ['error' => true, 'message' => "Une ou plusieurs données obligatoires sont manquantes"],
+                'json'
+            );
+
+            return new JsonResponse($data, Response::HTTP_BAD_REQUEST, [], true);
+        }
         $song = $this->repository->find($request->get("id"));
         if ($song) {
-            $jsonSongList = $this->serializer->serialize(["error" => false, "song" => $song], 'json', ['groups' => 'getSongs']);
+            $jsonSongList = $this->serializer->serialize(["error" => false, "song" => $song], 'json', ['groups' => 'getSong']);
 
             return new JsonResponse($jsonSongList, Response::HTTP_OK, [], true);
         } else {
-            return $this->json([
-                'error' => true,
-                'message' => 'Song Not Found',
-            ], Response::HTTP_NOT_FOUND);
+            $data = $this->serializer->serialize(
+                ['error' => true, 'message' => "Une ou plusieurs données obligatoires sont erronnées"],
+                'json'
+            );
+            return new JsonResponse($data, Response::HTTP_CONFLICT, [], true);
         }
     }
 

@@ -7,8 +7,9 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
 use Symfony\Component\Security\Core\User\UserInterface;
-
+use Symfony\Component\Serializer\Annotation\Context;
 use Symfony\Component\Serializer\Annotation\Groups;
+use Symfony\Component\Serializer\Normalizer\DateTimeNormalizer;
 use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: UserRepository::class)]
@@ -21,7 +22,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private ?int $id = null;
 
     // #[ORM\Id]
-    #[Groups(["getUsers"])]
+    //#[Groups(["getUsers"])]
     #[ORM\Column(length: 90)]
     private ?string $idUser = null;
 
@@ -47,17 +48,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[ORM\Column(length: 15, nullable: true)]
     #[Groups(["getUsers", "getLogin"])]
-    #[Assert\Regex(pattern: '/^(?:\+33|0)[0-9]{9}$/')]
+    #[Assert\Regex(pattern: '/^(?:\+33|0)[0-9]{9}$/',message:'Telephone')]
     #[Assert\Length(min: 10, max: 12, maxMessage: 'Telephone', minMessage: 'Telephone', exactMessage: 'Telephone')]
     private ?string $tel = null;
-
-    // #[ORM\Column]
-    // #[Groups(["getUsers", "getLogin"])]
-    // private ?\DateTimeImmutable $createdAt = null;
-
-    // #[ORM\Column(type: Types::DATETIME_MUTABLE)]
-    // #[Groups(["getUsers"])]
-    // private ?\DateTimeInterface $updatedAt = null;
 
     #[ORM\OneToOne(mappedBy: 'User_idUser', cascade: ['persist', 'remove'])]
     #[Groups(["getLogin"])]
@@ -70,6 +63,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[ORM\Column(type: Types::DATE_MUTABLE)]
     #[Groups(["getUsers", "getLogin", "getArtist"])]
+    #[Context([DateTimeNormalizer::FORMAT_KEY =>' d-m-Y'])]
     private ?\DateTimeInterface $dateBirth = null;
 
     #[ORM\Column(length: 30, nullable: true)]
@@ -82,10 +76,12 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[ORM\Column]
     #[Groups(["getUsers", "getLogin"])]
+    #[Context([DateTimeNormalizer::FORMAT_KEY =>' d-m-Y'])]
     private ?\DateTimeImmutable $createdAt = null;
 
     #[ORM\Column]
     #[Groups(["getUsers"])]
+    #[Context([DateTimeNormalizer::FORMAT_KEY =>' d-m-Y'])]
     private ?\DateTimeImmutable $updatedAt = null;
 
     public function __construct()

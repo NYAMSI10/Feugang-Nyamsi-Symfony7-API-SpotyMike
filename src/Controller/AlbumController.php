@@ -36,6 +36,7 @@ class AlbumController extends AbstractController
         $this->validator = $validator;
     }
 
+    /*
     #[Route('/album', name: 'album_list', methods: ['GET'])]
     public function index(): JsonResponse
     {
@@ -46,13 +47,14 @@ class AlbumController extends AbstractController
         ]);
         return new JsonResponse($data, Response::HTTP_OK, [], true);
     }
+    */
 
     #[Route('/album', name: 'album_new', methods: 'POST')]
     public function new(Request $request, GenerateId $generateId): JsonResponse
     {
         $existAlbum = $this->repository->findOneBy(["nom" => $request->get('nom')]);
+        
         $artist = $this->artistRepository->findOneBy(["User_idUser" => $this->getUser()]);
-
         if ($existAlbum) {
             return $this->json([
                 'error' => true,
@@ -64,7 +66,7 @@ class AlbumController extends AbstractController
         $album->setIdAlbum($generateId->randId())
             ->setNom($request->get('nom'))
             ->setCateg($request->get('categ'))
-            ->setCover($request->get('cover'))
+            ->setYear($request->get('year'))
             ->setArtistUserIdUser($artist);
 
         $errors = $this->validator->validate($album);
@@ -85,19 +87,32 @@ class AlbumController extends AbstractController
     }
 
     #[Route('album/{id}', name: 'album_show', methods: ['GET'])]
-    public function show(Request $request): JsonResponse
+    public function show(Request $request, int $id = 0): JsonResponse
     {
+       
+        $id = $request->get('id');
 
-        $album = $this->repository->find($request->get("id"));
+        if (!isset($id) || $id == 0) {
+            $data = $this->serializer->serialize(
+                ['error' => true, 'message' => "Une ou plusieurs données obligatoires sont manquantes"],
+                'json'
+            );
+
+            return new JsonResponse($data, Response::HTTP_BAD_REQUEST, [], true);
+        }
+
+        $album = $this->repository->find($id);
+       
         if ($album) {
             $jsonAlbumList = $this->serializer->serialize(["error" => false, "album" => $album], 'json', ['groups' => 'getAlbums']);
 
             return new JsonResponse($jsonAlbumList, Response::HTTP_OK, [], true);
         } else {
-            return $this->json([
-                'error' => true,
-                'message' => 'Album Not Found',
-            ], Response::HTTP_NOT_FOUND);
+            $data = $this->serializer->serialize(
+                ['error' => true, 'message' => "Une ou plusieurs données obligatoires sont erronnées"],
+                'json'
+            );
+            return new JsonResponse($data, Response::HTTP_CONFLICT, [], true);
         }
     }
 

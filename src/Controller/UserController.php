@@ -174,18 +174,7 @@ class UserController extends AbstractController
                 ['error' => false, 'message' => "L'utilisateur a bien été créé avec succès", 'user' =>   $user],
                 'json',
                 [
-                    'groups' => 'getUsers',
-                    AbstractNormalizer::CALLBACKS => [
-                        'dateBirth' => function ($innerObject, $outerObject, string $attributeName, string $format = null, array $context = []) {
-                            return $innerObject instanceof \DateTimeInterface ? $innerObject->format('d-m-Y') : '';
-                        },
-                        'createAt' => function ($innerObject, $outerObject, string $attributeName, string $format = null, array $context = []) {
-                            return $innerObject instanceof \DateTimeInterface ? $innerObject->format('d-m-Y') : '';
-                        },
-                        'updateAt' => function ($innerObject, $outerObject, string $attributeName, string $format = null, array $context = []) {
-                            return $innerObject instanceof \DateTimeInterface ? $innerObject->format('d-m-Y') : '';
-                        }
-                    ]
+                    'groups' => 'getUsers'
                 ]
             );
 
@@ -259,18 +248,7 @@ class UserController extends AbstractController
                 ],
                 'json',
                 [
-                    'groups' => 'getUsers',
-                    AbstractNormalizer::CALLBACKS => [
-                        'dateBirth' => function ($innerObject, $outerObject, string $attributeName, string $format = null, array $context = []) {
-                            return $innerObject instanceof \DateTimeInterface ? $innerObject->format('d-m-Y') : '';
-                        },
-                        'createAt' => function ($innerObject, $outerObject, string $attributeName, string $format = null, array $context = []) {
-                            return $innerObject instanceof \DateTimeInterface ? $innerObject->format('d-m-Y') : '';
-                        },
-                        'updateAt' => function ($innerObject, $outerObject, string $attributeName, string $format = null, array $context = []) {
-                            return $innerObject instanceof \DateTimeInterface ? $innerObject->format('d-m-Y') : '';
-                        }
-                    ]
+                    'groups' => 'getUsers'
                 ]
             );
 
@@ -285,20 +263,11 @@ class UserController extends AbstractController
         }
     }
 
-    #[Route('/user/{id}', name: 'user_delete', methods: ['DELETE'])]
+    #[Route('/user', name: 'user_delete', methods: ['DELETE'])]
     public function delete(Request $request): JsonResponse
     {
 
-        $user = $this->repository->find($request->get('id'));
-        if (!$user) {
-
-            $data = $this->serializer->serialize(
-                ['error' => true, 'message' => "L'utilisateur n'existe pas"],
-                'json'
-            );
-
-            return new JsonResponse($data, Response::HTTP_NOT_FOUND, [], true);
-        }
+        $user = $this->getUser();
         $this->entityManager->remove($user);
         $this->entityManager->flush();
 
