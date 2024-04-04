@@ -26,41 +26,55 @@ class Artist
     #[Groups(["getArtist"])]
     private ?User $User_idUser = null;
 
-    
+
     #[ORM\Column(length: 90, unique: true)]
     #[Assert\NotBlank(message: 'fullname')]
     #[Assert\NotNull(message: 'fullname')]
     private ?string $fullname = null;
 
-    
-    #[ORM\Column(length: 90)]
-    #[Assert\NotBlank(message: 'label')]
-    #[Assert\NotNull(message: 'label')]
-    private ?string $label = null;
 
-    
+    // #[ORM\Column(length: 90)]
+    // #[Assert\NotBlank(message: 'label')]
+    // #[Assert\NotNull(message: 'label')]
+    // private ?string $label = null;
+
+
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $description = null;
 
-    
+
     #[ORM\ManyToMany(targetEntity: Song::class, mappedBy: 'Artist_idUser', cascade: ['persist', 'remove'])]
     private Collection $songs;
 
-   
+
     #[ORM\OneToMany(targetEntity: Album::class, mappedBy: 'artist_User_idUser', cascade: ['persist', 'remove'])]
     private Collection $albums;
 
     #[Groups(["getArtist"])]
     #[SerializedName('Artist.createdAt')]
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
-    #[Context([DateTimeNormalizer::FORMAT_KEY =>' d-m-Y'])]
+    #[Context([DateTimeNormalizer::FORMAT_KEY => ' d-m-Y'])]
     private ?\DateTimeInterface $createdAt = null;
+
+    #[ORM\ManyToMany(targetEntity: User::class, mappedBy: 'followers')]
+    private Collection $users;
+
+    #[ORM\OneToMany(targetEntity: ArtistHasLabel::class, mappedBy: 'idArtist')]
+    private Collection $artistHasLabels;
+
+    #[ORM\Column]
+    private ?bool $active = null;
+
+
+
 
     public function __construct()
     {
         $this->songs = new ArrayCollection();
         $this->albums = new ArrayCollection();
         $this->createdAt = new \DateTimeImmutable();
+        $this->users = new ArrayCollection();
+        $this->artistHasLabels = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -92,17 +106,7 @@ class Artist
         return $this;
     }
 
-    public function getLabel(): ?string
-    {
-        return $this->label;
-    }
 
-    public function setLabel(string $label): static
-    {
-        $this->label = $label;
-
-        return $this;
-    }
 
     public function getDescription(): ?string
     {
@@ -199,6 +203,75 @@ class Artist
     public function setCreatedAt(\DateTimeInterface $createdAt): static
     {
         $this->createdAt = $createdAt;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, User>
+     */
+    public function getUsers(): Collection
+    {
+        return $this->users;
+    }
+
+    public function addUser(User $user): static
+    {
+        if (!$this->users->contains($user)) {
+            $this->users->add($user);
+            $user->addFollower($this);
+        }
+
+        return $this;
+    }
+
+    public function removeUser(User $user): static
+    {
+        if ($this->users->removeElement($user)) {
+            $user->removeFollower($this);
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, ArtistHasLabel>
+     */
+    public function getArtistHasLabels(): Collection
+    {
+        return $this->artistHasLabels;
+    }
+
+    public function addArtistHasLabel(ArtistHasLabel $artistHasLabel): static
+    {
+        if (!$this->artistHasLabels->contains($artistHasLabel)) {
+            $this->artistHasLabels->add($artistHasLabel);
+            $artistHasLabel->setIdArtist($this);
+        }
+
+        return $this;
+    }
+
+    public function removeArtistHasLabel(ArtistHasLabel $artistHasLabel): static
+    {
+        if ($this->artistHasLabels->removeElement($artistHasLabel)) {
+            // set the owning side to null (unless already changed)
+            if ($artistHasLabel->getIdArtist() === $this) {
+                $artistHasLabel->setIdArtist(null);
+            }
+        }
+
+        return $this;
+    }
+
+    public function isActive(): ?bool
+    {
+        return $this->active;
+    }
+
+    public function setActive(bool $active): static
+    {
+        $this->active = $active;
 
         return $this;
     }
