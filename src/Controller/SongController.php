@@ -78,8 +78,6 @@ class SongController extends AbstractController
             ->addArtistIdUser($artistRepository->find($request->get('idartistuser')))
             ->setAlbum($albumRepository->find($request->get('idalbum')))
             ->setPlaylistHasSong($playlistHasSongRepository->find($request->get('idplaylisthassong')));
-
-
         $this->entityManager->persist($song);
         $this->entityManager->flush();
         $jsonSongList = $this->serializer->serialize($song, 'json', ['groups' => 'getSongs']);

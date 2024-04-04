@@ -48,7 +48,7 @@ class LoginController extends AbstractController
     {
         $email = $request->get('Email');
         $password = $request->get('Password');
-
+        dd($password);
         $encodedEmail = urlencode($email);
 
         if (!isset($email) || !isset($password)) {
