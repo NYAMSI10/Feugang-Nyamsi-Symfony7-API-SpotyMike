@@ -41,22 +41,51 @@ class ArtistController extends AbstractController
         $this->validator = $validator;
     }
 
-    /*
+    
     #[Route('/artist', name: 'artist_list', methods: ['GET'])]
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
-        $artistes = $this->repository->findAll();
+        $page = 1;
+        $limit = 5;
 
-        $data = $this->serializer->serialize($artistes, 'json', [
-            AbstractNormalizer::IGNORED_ATTRIBUTES => ['id'],
-        ]);
-        return new JsonResponse($data, Response::HTTP_OK, [], true);
-        return $this->json([
-            'message' => 'List of artists',
-            'data' =>   $data
-            ],Response::HTTP_OK);
+        $check_visibility = false;
+        $user = $this->entityManager->getRepository(User::class)->findOneBy(['email' => $this->getUser()->getUserIdentifier()]);
 
-    }*/
+        if (!in_array('ROLE_ARTIST', $user->getRoles(), true))
+            $check_visibility = true;
+
+
+        $current_page = $request->get('currentPage');
+
+        if(isset($current_page)) {
+            if(!is_numeric($current_page) || $current_page <= 0  ) {
+                $data = $this->serializer->serialize([
+                    'error' => true,
+                    'message' => "Le paramètre de pagination est invalide. Veuillez fournir un numéro de page valide"
+                ], 'json');
+                return new JsonResponse($data, Response::HTTP_BAD_REQUEST, [], true);
+            } 
+        }
+       
+
+        $artistes_data = $this->repository->findAllWithPagination($check_visibility,($current_page)?intval($current_page):$page,$limit);
+        if($artistes_data['artists']) {
+            $data = $this->serializer->serialize([
+                'error' => false,
+                'artists' => $artistes_data['artists'],
+                'pagination' => $artistes_data['pagination'],
+                'message' => "Informations des artistes récupérées avec succès."
+            ], 'json');
+            return new JsonResponse($data, Response::HTTP_OK, [], true);
+        } else {
+            $data = $this->serializer->serialize([
+                'error' => true,
+                'message' => "Aucun artiste trouvé pour la page demandée"
+            ], 'json');
+            return new JsonResponse($data, Response::HTTP_NOT_FOUND, [], true);
+        }
+
+    }
 
     #[Route('/artist/{fullname}', name: 'artist_new',  methods: ['POST', 'GET'])]
     public function new(Request $request, string $fullname = 'none'): JsonResponse

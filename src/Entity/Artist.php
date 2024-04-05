@@ -23,7 +23,8 @@ class Artist
 
     #[ORM\OneToOne(inversedBy: 'artist', cascade: ['persist', 'remove'])]
     #[ORM\JoinColumn(nullable: false)]
-    #[Groups(["getArtist"])]
+    #[SerializedName('artist')]
+    #[Groups(["getArtist","getArtists"])]
     private ?User $User_idUser = null;
 
 
@@ -43,10 +44,11 @@ class Artist
     private ?string $description = null;
 
 
+    #[Groups(["getArtists"])]
     #[ORM\ManyToMany(targetEntity: Song::class, mappedBy: 'Artist_idUser', cascade: ['persist', 'remove'])]
     private Collection $songs;
 
-
+    #[Groups(["getArtists"])]
     #[ORM\OneToMany(targetEntity: Album::class, mappedBy: 'artist_User_idUser', cascade: ['persist', 'remove'])]
     private Collection $albums;
 
@@ -63,7 +65,7 @@ class Artist
     private Collection $artistHasLabels;
 
     #[ORM\Column]
-    private ?bool $active = null;
+    private ?bool $active = true;
 
 
 
