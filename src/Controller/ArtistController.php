@@ -61,12 +61,21 @@ class ArtistController extends AbstractController
         $user = $this->entityManager->getRepository(User::class)->findOneBy(['email' => $this->getUser()->getUserIdentifier()]);
         if ($request->getMethod() == 'POST') {
             $fullname = $request->request->get('fullname');
-            $label = $request->get('label');
+            $id_label = $request->get('id_label');
             $description = $request->get('description');
 
-            if (!isset($fullname) || !isset($label)) {
+            if (!isset($fullname) || !isset($id_label)) {
                 $data = $this->serializer->serialize(
-                    ['error' => true, 'message' => "Une ou plusieurs données obligatoires sont manquantes"],
+                    ['error' => true, 'message' => "L'id dedu label et le fullname sont obligatoires"],
+                    'json'
+                );
+
+                return new JsonResponse($data, Response::HTTP_BAD_REQUEST, [], true);
+            }
+
+            if(!is_int($id_label)) {
+                $data = $this->serializer->serialize(
+                    ['error' => true, 'message' => "Le format de l'id du label est invalide"],
                     'json'
                 );
 
@@ -75,10 +84,10 @@ class ArtistController extends AbstractController
 
             if (in_array('ROLE_ARTIST', $user->getRoles(), true)) {
                 $data = $this->serializer->serialize(
-                    ['error' => true, 'message' => "Un compte utilisateur est déjà un compte artiste"],
+                    ['error' => true, 'message' => "Un utilisateur ne peut gérer qu'un seul compte artiste. Veuillez supprimer le compte existant pour en créer un nouveau"],
                     'json'
                 );
-                return new JsonResponse($data, Response::HTTP_CONFLICT, [], true);
+                return new JsonResponse($data, Response::HTTP_FORBIDDEN, [], true);
             }
 
             $today = new \DateTime();
@@ -96,7 +105,7 @@ class ArtistController extends AbstractController
             $searchArtist = $this->repository->findOneBy(['fullname' => $fullname]);
             if ($searchArtist) {
                 $data = $this->serializer->serialize(
-                    ['error' => true, 'message' => "Un utilisateur ayant ce nom d'artiste déjà enregistré"],
+                    ['error' => true, 'message' => "Ce nom d'artiste est déjà pris. Veuillez en choisir un autre"],
                     'json'
                 );
 
