@@ -22,7 +22,7 @@ class CustomListener
     {
         $response = new JsonResponse([
             'error' => true,
-            'message' => "Votre token n'es pas correct",
+            'message' => "Authentification requise. Vous devez etre connecté pour effectuer cette action",
         ], JsonResponse::HTTP_UNAUTHORIZED);
 
         $event->setResponse($response);
