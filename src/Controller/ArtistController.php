@@ -4,10 +4,13 @@ namespace App\Controller;
 
 use App\Entity\Album;
 use App\Entity\Artist;
+use App\Entity\ArtistHasLabel;
+use App\Entity\Label;
 use App\Entity\Song;
 use App\Entity\User;
 use Doctrine\ORM\EntityManager;
 use App\Repository\UserRepository;
+use DateTime;
 use Doctrine\ORM\EntityManagerInterface;
 use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -121,7 +124,7 @@ class ArtistController extends AbstractController
 
                 $artist->setUserIdUser($user);
                 $artist->setFullname($fullname);
-                $artist->setLabel($label);
+               // $artist->setLabel($label);
                 $artist->setDescription(isset($description) ? $description : '');
                 $errors = $this->validator->validate($artist);
                 if (count($errors) > 0) {
@@ -139,6 +142,17 @@ class ArtistController extends AbstractController
 
                 $this->entityManager->persist($artist);
                 $this->entityManager->flush();
+
+                $label = $this->entityManager->getRepository(Label::class)->find($id_label);
+
+                $artistHasLabel = new ArtistHasLabel();
+                $artistHasLabel->setIdArtist($artist)
+                            ->setIdLabel($label)
+                            ->setCreatedAt(new \DateTimeImmutable());
+
+                $this->entityManager->persist($artistHasLabel);
+                $this->entityManager->flush();
+                
 
                 $data = $this->serializer->serialize(
                     ['error' => false, 'message' => "Votre inscription a bien été pris en compte"],
