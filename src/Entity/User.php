@@ -96,7 +96,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private Collection $playlists;
 
     #[ORM\Column]
-    private ?bool $active = null;
+    private ?bool $active = true;
 
     public function __construct()
     {

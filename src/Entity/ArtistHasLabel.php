@@ -5,6 +5,7 @@ namespace App\Entity;
 use App\Repository\ArtistHasLabelRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
+use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: ArtistHasLabelRepository::class)]
@@ -15,10 +16,6 @@ class ArtistHasLabel
     #[ORM\Column]
     private ?int $id = null;
 
-
-    #[ORM\Column]
-    private ?\DateTimeImmutable $createdAt = null;
-
     #[ORM\ManyToOne(inversedBy: 'artistHasLabels')]
     #[ORM\JoinColumn(nullable: false)]
     private ?Artist $idArtist = null;
@@ -27,24 +24,20 @@ class ArtistHasLabel
     #[ORM\JoinColumn(nullable: false)]
     private ?Label $idLabel = null;
 
+    #[ORM\Column(type: Types::DATETIME_MUTABLE)]
+    private ?\DateTimeInterface $entrydate = null;
 
+    #[ORM\Column(type: Types::DATETIME_MUTABLE, nullable: true)]
+    private ?\DateTimeInterface $issuedate = null;
+
+    public function __construct()
+    {
+        $this->entrydate = new \DateTimeImmutable();
+    }
 
     public function getId(): ?int
     {
         return $this->id;
-    }
-
-
-    public function getCreatedAt(): ?\DateTimeImmutable
-    {
-        return $this->createdAt;
-    }
-
-    public function setCreatedAt(\DateTimeImmutable $createdAt): static
-    {
-        $this->createdAt = $createdAt;
-
-        return $this;
     }
 
     public function getIdArtist(): ?Artist
@@ -67,6 +60,30 @@ class ArtistHasLabel
     public function setIdLabel(?Label $idLabel): static
     {
         $this->idLabel = $idLabel;
+
+        return $this;
+    }
+
+    public function getEntrydate(): ?\DateTimeInterface
+    {
+        return $this->entrydate;
+    }
+
+    public function setEntrydate(\DateTimeInterface $entrydate): static
+    {
+        $this->entrydate = $entrydate;
+
+        return $this;
+    }
+
+    public function getIssuedate(): ?\DateTimeInterface
+    {
+        return $this->issuedate;
+    }
+
+    public function setIssuedate(?\DateTimeInterface $issuedate): static
+    {
+        $this->issuedate = $issuedate;
 
         return $this;
     }
