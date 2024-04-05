@@ -14,8 +14,6 @@ class ArtistHasLabel
     #[ORM\GeneratedValue]
     #[ORM\Column]
     private ?int $id = null;
-
-
     #[ORM\Column]
     private ?\DateTimeImmutable $createdAt = null;
 

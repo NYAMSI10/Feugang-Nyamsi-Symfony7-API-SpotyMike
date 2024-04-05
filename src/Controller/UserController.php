@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\User;
 use App\Service\GenerateId;
+use DateTime;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -94,24 +95,31 @@ class UserController extends AbstractController
     #[Route('/register', name: 'user_new', methods: 'POST')]
     public function new(Request $request, GenerateId $generateId): JsonResponse
     {
+        $user = new User();
+
+
         $firstname = $request->get('firstname');
         $lastname = $request->get('lastname');
         $email = $request->get('email');
         $password = $request->get('password');
         $dateBirth = $request->get('dateBirth');
-
-
         $today = new \DateTime();
         $birthdate = new \DateTime($dateBirth);
         $age = $today->diff($birthdate)->y;
+        // dd(DateValidator::createFromFormat('d/m/Y', (string)$dateBirth));
 
-        if (!isset($firstname) || !isset($lastname) || !isset($email) || !isset($password) || !isset($dateBirth)) {
-            $data = $this->serializer->serialize(
-                ['error' => true, 'message' => "Une ou plusieurs données obligatoires sont manquantes"],
-                'json'
-            );
+        if (!$firstname || !$lastname || !$email || !$password || !$dateBirth) {
+            return $this->json([
+                'error' => true,
+                'message' => 'Une ou plusieurs données obligatoires sont manquantes',
+            ], Response::HTTP_BAD_REQUEST);
+        }
 
-            return new JsonResponse($data, Response::HTTP_BAD_REQUEST, [], true);
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            return $this->json([
+                'error' => true,
+                'message' => "le format de l'email est invalide",
+            ], Response::HTTP_BAD_REQUEST);
         }
 
 
@@ -134,7 +142,6 @@ class UserController extends AbstractController
             return new JsonResponse($data, Response::HTTP_CONFLICT, [], true);
         }
         try {
-            $user = new User();
             $user->setIdUser($generateId->randId());
             $user->setFirstname($firstname);
             $user->setLastname($lastname);
@@ -149,24 +156,23 @@ class UserController extends AbstractController
             );
             $user->setPassword($hashedPassword);
 
-            $errors = $this->validator->validate($user);
-            if (count($errors) > 0) {
-                $errorMessages = [];
-                foreach ($errors as $error) {
-                    $errorMessage = $error->getMessage();
-                    if (!in_array($errorMessage, $errorMessages)) {
-                        $errorMessages[] = $errorMessage;
-                    }
-                }
+            // if (count($errors) > 0) {
+            //     $errorMessages = [];
+            //     foreach ($errors as $error) {
+            //         $errorMessage = $error->getMessage();
+            //         if (!in_array($errorMessage, $errorMessages)) {
+            //             $errorMessages[] = $errorMessage;
+            //         }
+            //     }
 
 
-                $data = $this->serializer->serialize(
-                    ['error' => true, 'message' => "Une ou plusieurs donnees sont erronees", 'data' => $errorMessages],
-                    'json'
-                );
+            //     $data = $this->serializer->serialize(
+            //         ['error' => true, 'message' => "Une ou plusieurs donnees sont erronees", 'data' => $errorMessages],
+            //         'json'
+            //     );
 
-                return new JsonResponse($data, Response::HTTP_CONFLICT, [], true);
-            }
+            //     return new JsonResponse($data, Response::HTTP_CONFLICT, [], true);
+            // }
 
             $this->entityManager->persist($user);
             $this->entityManager->flush();

@@ -50,7 +50,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[ORM\Column(length: 15, nullable: true)]
     #[Groups(["getUsers", "getLogin"])]
-    #[Assert\Regex(pattern: '/^(?:\+33|0)[0-9]{9}$/',message:'Telephone')]
+    #[Assert\Regex(pattern: '/^(?:\+33|0)[0-9]{9}$/', message: 'Telephone')]
     #[Assert\Length(min: 10, max: 12, maxMessage: 'Telephone', minMessage: 'Telephone', exactMessage: 'Telephone')]
     private ?string $tel = null;
 
@@ -65,7 +65,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[ORM\Column(type: Types::DATE_MUTABLE)]
     #[Groups(["getUsers", "getLogin", "getArtist"])]
-    #[Context([DateTimeNormalizer::FORMAT_KEY =>' d-m-Y'])]
+    #[Context([DateTimeNormalizer::FORMAT_KEY => ' d/m/Y'])]
     private ?\DateTimeInterface $dateBirth = null;
 
     #[ORM\Column(length: 30, nullable: true)]
@@ -78,12 +78,12 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[ORM\Column]
     #[Groups(["getUsers", "getLogin"])]
-    #[Context([DateTimeNormalizer::FORMAT_KEY =>' d-m-Y'])]
+    #[Context([DateTimeNormalizer::FORMAT_KEY => ' Y-m-d'])]
     private ?\DateTimeImmutable $createdAt = null;
 
     #[ORM\Column]
     #[Groups(["getUsers"])]
-    #[Context([DateTimeNormalizer::FORMAT_KEY =>' d-m-Y'])]
+    #[Context([DateTimeNormalizer::FORMAT_KEY => ' Y-m-d'])]
     private ?\DateTimeImmutable $updatedAt = null;
 
     #[ORM\ManyToMany(targetEntity: Artist::class, inversedBy: 'users')]
@@ -96,7 +96,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private Collection $playlists;
 
     #[ORM\Column]
-    private ?bool $active = null;
+    private ?bool $active = true;
 
     public function __construct()
     {
