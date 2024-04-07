@@ -35,8 +35,9 @@ class LoginController extends AbstractController
     #[Route('/login', name: 'app_login_post', methods: 'POST')]
     public function login(Request $request, UserPasswordHasherInterface $passwordHasher): JsonResponse
     {
-        $email = $request->get('Email');
-        $password = $request->get('Password');
+        $email = $request->get('email');
+        $password = $request->get('password');
+
         $encodedEmail = urlencode($email);
 
         if (!isset($email) || !isset($password)) {
@@ -50,12 +51,24 @@ class LoginController extends AbstractController
 
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             $data = $this->serializer->serialize(
-                ['error' => true, 'message' => "Email/password incorret"],
+                ['error' => true, 'message' => "Le format de l'email est invalide"],
                 'json'
             );
 
             return new JsonResponse($data, Response::HTTP_BAD_REQUEST, [], true);
         }
+
+        $password_pattern = '/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?!.* )(?=.*[^a-zA-Z0-9]).{8,20}$/';
+
+        if (!preg_match($password_pattern, $password)) {
+            $data = $this->serializer->serialize(
+                ['error' => true, 'message' => "Le mot de passe doit contenir au moins une majuscule, une minuscule,un chiffre, un caractère spécial et avoir 8 caractères minimum"],
+                'json'
+            );
+
+            return new JsonResponse($data, Response::HTTP_BAD_REQUEST, [], true);
+        }
+
 
         if ($this->cache->getItem('blocked_user_' . $encodedEmail)->isHit()) {
             return new JsonResponse(['error' => true, 'message' => "Trop de tentative sur l'email " . $email . " (5max) - Veuillez patienter(2min)"], Response::HTTP_TOO_MANY_REQUESTS);
@@ -75,6 +88,7 @@ class LoginController extends AbstractController
 
 
         $user = $this->repository->findOneBy(['email' => $email]);
+
 
         if (!$user || !$passwordHasher->isPasswordValid($user, $password)) {
             $cacheItem_attempt = $this->cache->getItem('login_attempts_' . $encodedEmail);

@@ -10,7 +10,7 @@ use Doctrine\Migrations\AbstractMigration;
 /**
  * Auto-generated Migration: Please modify to your needs!
  */
-final class Version20240404132458 extends AbstractMigration
+final class Version20240405083600 extends AbstractMigration
 {
     public function getDescription(): string
     {
@@ -20,14 +20,12 @@ final class Version20240404132458 extends AbstractMigration
     public function up(Schema $schema): void
     {
         // this up() migration is auto-generated, please modify it to your needs
-        $this->addSql('ALTER TABLE artist ADD active TINYINT(1) NOT NULL');
-        $this->addSql('ALTER TABLE user ADD active TINYINT(1) NOT NULL');
+        $this->addSql('ALTER TABLE artist_has_label ADD entrydate DATETIME NOT NULL, ADD issuedate DATETIME DEFAULT NULL, DROP created_at');
     }
 
     public function down(Schema $schema): void
     {
         // this down() migration is auto-generated, please modify it to your needs
-        $this->addSql('ALTER TABLE artist DROP active');
-        $this->addSql('ALTER TABLE user DROP active');
+        $this->addSql('ALTER TABLE artist_has_label ADD created_at DATETIME NOT NULL COMMENT \'(DC2Type:datetime_immutable)\', DROP entrydate, DROP issuedate');
     }
 }
