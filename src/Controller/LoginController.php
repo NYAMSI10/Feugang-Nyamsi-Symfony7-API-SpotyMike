@@ -89,7 +89,6 @@ class LoginController extends AbstractController
 
         $user = $this->repository->findOneBy(['email' => $email]);
 
-
         if (!$user || !$passwordHasher->isPasswordValid($user, $password)) {
             $cacheItem_attempt = $this->cache->getItem('login_attempts_' . $encodedEmail);
             if (!$cacheItem_attempt->isHit()) {
@@ -130,8 +129,8 @@ class LoginController extends AbstractController
         return new JsonResponse($data, Response::HTTP_OK, [], true);
     }
 
-    #[Route('/password-lost', name: 'app_password-lost', methods: 'POST')]
-    public function forgetPassword(Request $request, UserPasswordHasherInterface $passwordHasher): JsonResponse
+    #[Route('/password-lost', name: 'app_password_lost', methods: 'POST')]
+    public function forgetPassword(Request $request): JsonResponse
     {
         $email = $request->get('email');
         $encodedEmail = urlencode($email);
