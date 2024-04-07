@@ -14,8 +14,6 @@ use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
-use Symfony\Component\Cache\Adapter\FilesystemAdapter;
 
 class LoginController extends AbstractController
 {
@@ -34,21 +32,11 @@ class LoginController extends AbstractController
         $this->cache = $cache;
     }
 
-    #[Route('/login', name: 'app_login_get', methods: 'GET')]
-    public function index(): JsonResponse
-    {
-        return $this->json([
-            'message' => 'Welcome to your new controller!',
-            'path' => 'src/Controller/LoginController.php',
-        ]);
-    }
-
     #[Route('/login', name: 'app_login_post', methods: 'POST')]
     public function login(Request $request, UserPasswordHasherInterface $passwordHasher): JsonResponse
     {
         $email = $request->get('Email');
         $password = $request->get('Password');
-        dd($password);
         $encodedEmail = urlencode($email);
 
         if (!isset($email) || !isset($password)) {
@@ -128,5 +116,63 @@ class LoginController extends AbstractController
         return new JsonResponse($data, Response::HTTP_OK, [], true);
     }
 
-    //login, mot de passe et mot de passe oublié
+    #[Route('/password-lost', name: 'app_password-lost', methods: 'POST')]
+    public function forgetPassword(Request $request, UserPasswordHasherInterface $passwordHasher): JsonResponse
+    {
+        $email = $request->get('email');
+        $encodedEmail = urlencode($email);
+
+        $user = $this->repository->findOneBy(['email' => $email]);
+
+
+        if (!$email) {
+            return $this->json([
+                'error' => true,
+                'message' => "Email manquant. Veuillez fournir votre email pour la récupération du mot de passe ",
+            ], Response::HTTP_BAD_REQUEST);
+        }
+
+        if (!$user) {
+            return $this->json([
+                'error' => true,
+                'message' => "Aucun compte n'est associé à cet email.Veuillez vérifier et réessayer",
+            ], Response::HTTP_NOT_FOUND);
+        }
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            return $this->json([
+                'error' => true,
+                'message' => "le format de l'email est invalide.Veuillez entrer un email valide",
+            ], Response::HTTP_BAD_REQUEST);
+        }
+
+        if ($this->cache->getItem('blocked_user_' . $encodedEmail)->isHit()) {
+            return new JsonResponse(['error' => true, 'message' => "Trop de tentative sur l'email " . $email . " (5max) - Veuillez patienter(2min)"], Response::HTTP_TOO_MANY_REQUESTS);
+        }
+
+        $attempts = $this->cache->getItem('login_attempts_' . $encodedEmail)->get();
+
+
+        if ($attempts >= 3) {
+            $cacheItem_block =  $this->cache->getItem('blocked_user_' . $encodedEmail);
+            if (!$cacheItem_block->isHit()) {
+                $cacheItem_block->set(true)->expiresAfter(300);
+                $this->cache->save($cacheItem_block);
+            }
+            return new JsonResponse(['message' => "Trop de demandes de réinitialisation de mot de passe (3max). Veuillez attendre avant de réessayer (Dans 5min)"], Response::HTTP_TOO_MANY_REQUESTS);
+        }
+        if ($user) {
+            $cacheItem_attempt = $this->cache->getItem('login_attempts_' . $encodedEmail);
+            if (!$cacheItem_attempt->isHit()) {
+                $cacheItem_attempt->set(1)->expiresAfter(300);
+                $this->cache->save($cacheItem_attempt);
+            } else {
+                $cacheItem_attempt->set($attempts + 1)->expiresAfter(300);
+                $this->cache->save($cacheItem_attempt);
+            }
+            return $this->json([
+                'error' => true,
+                'message' => "Un email de réinitialisation de mot de passe a été envoyé à votre adresse email. Veuillez suivre les instructions contenues dans l'email pour réinitialiser votre mot de passe ",
+            ], Response::HTTP_OK);
+        }
+    }
 }

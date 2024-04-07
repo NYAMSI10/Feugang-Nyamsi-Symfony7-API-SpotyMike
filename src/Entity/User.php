@@ -50,7 +50,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[ORM\Column(length: 15, nullable: true)]
     #[Groups(["getUsers", "getLogin"])]
-    #[Assert\Regex(pattern: '/^(?:\+33|0)[0-9]{9}$/', message: 'Telephone')]
     #[Assert\Length(min: 10, max: 12, maxMessage: 'Telephone', minMessage: 'Telephone', exactMessage: 'Telephone')]
     private ?string $tel = null;
 

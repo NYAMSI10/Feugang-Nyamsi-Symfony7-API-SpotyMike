@@ -1,4 +1,5 @@
 <?php
+
 namespace App\EventListener;
 
 use Lexik\Bundle\JWTAuthenticationBundle\Event\JWTNotFoundEvent;
@@ -12,7 +13,7 @@ class CustomListener
     {
         $response = new JsonResponse([
             'error' => true,
-            'message' => "Votre token n'es pas correct",
+            'message' => "Authentification requise. Vous devez etre connecté pour effectuer cette action",
         ], JsonResponse::HTTP_UNAUTHORIZED);
 
         $event->setResponse($response);
@@ -22,7 +23,7 @@ class CustomListener
     {
         $response = new JsonResponse([
             'error' => true,
-            'message' => "Votre token n'es pas correct",
+            'message' => "Authentification requise. Vous devez etre connecté pour effectuer cette action",
         ], JsonResponse::HTTP_UNAUTHORIZED);
 
         $event->setResponse($response);
@@ -30,16 +31,15 @@ class CustomListener
 
     public function onJWTExpired(JWTExpiredEvent $event)
     {
-       
+
         //$response = $event->getResponse();
 
         //$response->setMessage('Your token is expired, please renew it.');
         $response = new JsonResponse([
             'error' => true,
-            'message' => "Votre token n'es pas correct",
+            'message' => "Authentification requise. Vous devez etre connecté pour effectuer cette action",
         ], JsonResponse::HTTP_UNAUTHORIZED);
 
         $event->setResponse($response);
-        
     }
 }

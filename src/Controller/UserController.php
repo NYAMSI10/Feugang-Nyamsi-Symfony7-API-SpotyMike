@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\User;
 use App\Service\GenerateId;
+use Countable;
 use DateTime;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -103,10 +104,14 @@ class UserController extends AbstractController
         $email = $request->get('email');
         $password = $request->get('password');
         $dateBirth = $request->get('dateBirth');
+
         $today = new \DateTime();
         $birthdate = new \DateTime($dateBirth);
         $age = $today->diff($birthdate)->y;
         // dd(DateValidator::createFromFormat('d/m/Y', (string)$dateBirth));
+
+        $password_pattern = '/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?!.* )(?=.*[^a-zA-Z0-9]).{8,20}$/';
+        $phone_pattern = '/^(?:\+33|0)[0-9]{9}$/';
 
         if (!$firstname || !$lastname || !$email || !$password || !$dateBirth) {
             return $this->json([
@@ -114,14 +119,32 @@ class UserController extends AbstractController
                 'message' => 'Une ou plusieurs données obligatoires sont manquantes',
             ], Response::HTTP_BAD_REQUEST);
         }
+        if (!preg_match($password_pattern, $password)) {
+            $data = $this->serializer->serialize(
+                ['error' => true, 'message' => "Le mot de passe doit contenir au moins une majuscule, une minuscule,un chiffre, un caractère spécial et avoir 8 caractères minimum"],
+                'json'
+            );
 
+            return new JsonResponse($data, Response::HTTP_BAD_REQUEST, [], true);
+        }
+        if (!preg_match($phone_pattern, $request->get('tel')) && $request->get('tel')) {
+            return $this->json([
+                'error' => true,
+                'message' => "Le format du numéro de téléphone est invalide",
+            ], Response::HTTP_BAD_REQUEST);
+        }
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             return $this->json([
                 'error' => true,
                 'message' => "le format de l'email est invalide",
             ], Response::HTTP_BAD_REQUEST);
         }
-
+        if (($request->get('sexe') != 0 || $request->get('sexe') != 1) && $request->get('sexe')) {
+            return $this->json([
+                'error' => true,
+                'message' => "La valeur du champ sexe est invalide, les valeurs autorisées sont 0 pour Femme, 1 pour Homme.",
+            ], Response::HTTP_BAD_REQUEST);
+        }
 
         if ($age < 12) {
             $data = $this->serializer->serialize(
@@ -150,29 +173,12 @@ class UserController extends AbstractController
             $user->setSexe($request->get('sexe'));
             $user->setDateBirth(new \DateTime($dateBirth));
             $user->setRoles(["ROLE_USER"]);
+
             $hashedPassword = $this->passwordHasher->hashPassword(
                 $user,
                 $password
             );
             $user->setPassword($hashedPassword);
-
-            // if (count($errors) > 0) {
-            //     $errorMessages = [];
-            //     foreach ($errors as $error) {
-            //         $errorMessage = $error->getMessage();
-            //         if (!in_array($errorMessage, $errorMessages)) {
-            //             $errorMessages[] = $errorMessage;
-            //         }
-            //     }
-
-
-            //     $data = $this->serializer->serialize(
-            //         ['error' => true, 'message' => "Une ou plusieurs donnees sont erronees", 'data' => $errorMessages],
-            //         'json'
-            //     );
-
-            //     return new JsonResponse($data, Response::HTTP_CONFLICT, [], true);
-            // }
 
             $this->entityManager->persist($user);
             $this->entityManager->flush();
@@ -196,73 +202,69 @@ class UserController extends AbstractController
         }
     }
 
-    #[Route('/user/{id}', name: 'user_edit', methods: ['POST', 'PUT'])]
+    #[Route('/user', name: 'user_edit', methods: ['POST', 'PUT'])]
     public function edit(Request $request): JsonResponse
     {
+
+        $detailUser = $this->repository->findOneBy(['email' => $this->getUser()->getUserIdentifier()]);
+        $user = $this->repository->find($detailUser->getId());
+
         $firstname = $request->get('firstname');
         $lastname = $request->get('lastname');
+        $phone_pattern = '/^(?:\+33|0)[0-9]{9}$/';
+        $word_pattern = '/^[A-Za-z]+$/';
 
-        if (!isset($firstname) || !isset($lastname)) {
-            $data = $this->serializer->serialize(
-                ['error' => true, 'message' => "Une ou plusieurs données obligatoires sont manquantes"],
-                'json'
-            );
-
-            return new JsonResponse($data, Response::HTTP_BAD_REQUEST, [], true);
+        if ((!preg_match($word_pattern, $firstname) || (!preg_match($word_pattern, $lastname))) && ($firstname  ||  $lastname)) {
+            return $this->json([
+                'error' => true,
+                'message' => "Les données fournies sont invalides ou incomplètes  ",
+            ], Response::HTTP_BAD_REQUEST);
         }
 
-        $user = $this->repository->find($request->get('id'));
-        if (!$user) {
-            $data = $this->serializer->serialize(
-                ['error' => true, 'message' => "L'utilisateur n'existe pas"],
-                'json'
-            );
+        if ($request->get('tel') && $request->get('tel') != $detailUser->getTel()) {
 
-            return new JsonResponse($data, Response::HTTP_NOT_FOUND, [], true);
-        }
-
-        try {
-            $user->setFirstname($firstname);
-            $user->setLastname(empty($data_received['email']) ? $user->getEmail() : $data_received['email']);
-            $user->setSexe($request->get('sexe'));
-            $user->setUpdateAt(new \DateTimeImmutable());
-
-
-            $errors = $this->validator->validate($user);
-            if (count($errors) > 0) {
-                $errorMessages = [];
-                foreach ($errors as $error) {
-                    $errorMessages[] = $error->getMessage();
-                }
-
-                $data = $this->serializer->serialize(
-                    ['error' => true, 'message' => "Une ou plusieurs données sont erronées", 'data' => $errorMessages],
-                    'json'
-                );
-
-                return new JsonResponse($data, Response::HTTP_BAD_REQUEST, [], true);
+            if ($this->repository->findOneBy(['tel' => $request->get('tel')])) {
+                return $this->json([
+                    'error' => true,
+                    'message' => "Conflit de donnée. le numéro de téléphone est déjà utilisé par un autre utilisateur",
+                ], Response::HTTP_CONFLICT);
             }
 
-
-            $this->entityManager->flush();
-
-
-            $data = $this->serializer->serialize(
-                [
+            if (!preg_match($phone_pattern, $request->get('tel')) && $request->get('tel')) {
+                return $this->json([
                     'error' => true,
-                    'message' => "L'utilisateur a bien été modifié avec succès",
-                    'user' => $user
-                ],
-                'json',
-                [
-                    'groups' => 'getUsers'
-                ]
-            );
+                    'message' => "Le format du numéro de téléphone est invalide",
+                ], Response::HTTP_BAD_REQUEST);
+            }
+        }
 
-            return new JsonResponse($data, Response::HTTP_OK, [], true);
+        if ((strlen($firstname) < 4 || strlen($lastname) < 4) && ($firstname || $lastname)) {
+            return $this->json([
+                'error' => true,
+                'message' => "Erreur de validation des données ",
+            ], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        if (($request->get('sexe') != 0 || $request->get('sexe') != 1) && $request->get('sexe')) {
+            return $this->json([
+                'error' => true,
+                'message' => "La valeur du champ sexe est invalide, les valeurs autorisées sont 0 pour Femme, 1 pour Homme.",
+            ], Response::HTTP_BAD_REQUEST);
+        }
+        try {
+            $user->setFirstname($firstname);
+            $user->setLastname($lastname);
+            $user->setTel($request->get('tel'));
+            $user->setSexe($request->get('sexe'));
+            $this->entityManager->persist($user);
+            $this->entityManager->flush();
+            return $this->json([
+                'error' => false,
+                'message' => 'Votre inscription a bien été prise en compte',
+            ], Response::HTTP_OK);
         } catch (\Exception $e) {
             $data = $this->serializer->serialize(
-                ['error' => true, 'message' => "Un souci serveur, veuillez réessayer plus tard"],
+                ['error' => true, 'message' => "Un souci serveur, veuillez réessayer plus tard", "erreur" => $e->getMessage()],
                 'json'
             );
 
