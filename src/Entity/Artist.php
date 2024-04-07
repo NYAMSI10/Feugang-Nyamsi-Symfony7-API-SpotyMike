@@ -31,6 +31,7 @@ class Artist
     #[ORM\Column(length: 90, unique: true)]
     #[Assert\NotBlank(message: 'fullname')]
     #[Assert\NotNull(message: 'fullname')]
+    #[Assert\Regex(pattern: '/^[a-zA-Z0-9]*$/', message:'Fullname')]
     private ?string $fullname = null;
 
 
