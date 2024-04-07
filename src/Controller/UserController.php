@@ -105,10 +105,11 @@ class UserController extends AbstractController
         $password = $request->get('password');
         $dateBirth = $request->get('dateBirth');
 
+        $formats = 'd/m/Y';
+        $date = \DateTime::createFromFormat($formats, $dateBirth);
         $today = new \DateTime();
-        $birthdate = new \DateTime($dateBirth);
-        $age = $today->diff($birthdate)->y;
-        // dd(DateValidator::createFromFormat('d/m/Y', (string)$dateBirth));
+        $age = $today->diff($date)->y;
+
 
         $password_pattern = '/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?!.* )(?=.*[^a-zA-Z0-9]).{8,20}$/';
         $phone_pattern = '/^(?:\+33|0)[0-9]{9}$/';
@@ -146,9 +147,15 @@ class UserController extends AbstractController
             ], Response::HTTP_BAD_REQUEST);
         }
 
+        if (!$date) {
+            return $this->json([
+                'error' => true,
+                'message' => "le format de la date de naissance est invalide. Le format atttendu est JJ/MM/AAAA ",
+            ], Response::HTTP_BAD_REQUEST);
+        }
         if ($age < 12) {
             $data = $this->serializer->serialize(
-                ['error' => true, 'message' => "L'age de l'utilisateur ne permet pas(12 ans)"],
+                ['error' => true, 'message' => "L'utilisateur doit avoir au moins 12 ans"],
                 'json'
             );
 
@@ -158,7 +165,7 @@ class UserController extends AbstractController
         $search = $this->repository->findOneBy(['email' => $request->get('email')]);
         if ($search) {
             $data = $this->serializer->serialize(
-                ['error' => true, 'message' => "Un compte utilisant cette adresse mail est déjà enregistré"],
+                ['error' => true, 'message' => "Cet email est déjà utilisé par un autre compte"],
                 'json'
             );
 
@@ -171,7 +178,7 @@ class UserController extends AbstractController
             $user->setEmail($email);
             $user->setTel($request->get('tel'));
             $user->setSexe($request->get('sexe'));
-            $user->setDateBirth(new \DateTime($dateBirth));
+            $user->setDateBirth($date);
             $user->setRoles(["ROLE_USER"]);
 
             $hashedPassword = $this->passwordHasher->hashPassword(
