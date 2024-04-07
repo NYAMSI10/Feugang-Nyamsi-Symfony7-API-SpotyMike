@@ -21,30 +21,6 @@ class ArtistRepository extends ServiceEntityRepository
         parent::__construct($registry, Artist::class);
     }
 
-    //    /**
-    //     * @return Artist[] Returns an array of Artist objects
-    //     */
-    //    public function findByExampleField($value): array
-    //    {
-    //        return $this->createQueryBuilder('a')
-    //            ->andWhere('a.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->orderBy('a.id', 'ASC')
-    //            ->setMaxResults(10)
-    //            ->getQuery()
-    //            ->getResult()
-    //        ;
-    //    }
-
-    //    public function findOneBySomeField($value): ?Artist
-    //    {
-    //        return $this->createQueryBuilder('a')
-    //            ->andWhere('a.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->getQuery()
-    //            ->getOneOrNullResult()
-    //        ;
-    //    }
 
     public function findAllWithPagination($checkvisibility,$page, $limit) 
     {
@@ -144,5 +120,78 @@ class ArtistRepository extends ServiceEntityRepository
                 'totalArtists' => $totalArtists
             )
         );
+    }
+
+    public function findByArtistAndAlbumAndSong ($artist_fullname, $checkvisibility)
+    {
+        $qb = $this->createQueryBuilder('a')
+        ->select('u.firstname','u.lastname','u.sexe','u.dateBirth','a.createdAt AS artist_createdAt', 's.idSong','s.title','s.cover AS song_cover','s.createdAt AS song_createdAt', 'al.idAlbum','al.nom','al.categ','al.cover','al.createdAt AS album_created','l.nom AS label')
+        ->leftJoin('a.User_idUser', 'u')
+        ->leftJoin('a.songs', 's')
+        ->leftJoin('a.albums', 'al')
+        ->leftJoin('App\Entity\ArtistHasLabel', 'ahl', 'WITH', 'a.id = ahl.idArtist')
+        ->leftJoin('App\Entity\Label', 'l', 'WITH', 'l.id = ahl.idLabel')
+        ->where('a.fullname = :fullname')
+        ->setParameter('fullname', $artist_fullname);
+        
+
+        if($checkvisibility) {
+            $qb->andWhere('s.visibility = :songVisibility')
+            ->andWhere('al.visibility = :albumVisibility')
+            ->andWhere('a.active = :active')
+            ->setParameter('songVisibility', true)
+            ->setParameter('albumVisibility', true)
+            ->setParameter('active', true);
+        }
+        $qb->andWhere('al.createdAt BETWEEN ahl.entrydate AND ahl.issuedate');
+
+       
+        $results = $qb->getQuery()->getResult();
+       
+        $artist = [];
+        foreach ($results as $result) {
+            $artistKey = $result['firstname'] . ' ' . $result['lastname'];
+
+            if (!isset($artist[$artistKey])) {
+                $artist[$artistKey] = [
+                    'firstname' => $result['firstname'],
+                    'lastname' => $result['lastname'],
+                    'sexe' => $result['sexe'],
+                    'dateBirth' => $result['dateBirth']->format('d-m-Y'),
+                    'Artist.createdAt' =>$result['artist_createdAt']->format('d-m-Y'),
+                    'albums' => [],
+                    'songs' => [],
+                ];
+            }
+
+            if ($result['idAlbum'] !== null) {
+                $album = [
+                    'id' => $result['idAlbum'],
+                    'nom' => $result['nom'],
+                    'categ' => $result['categ'],
+                    'cover' => $result['cover'],
+                    'label' => $result['label'],
+                    'createdAt' => $result['album_created']->format('d-m-Y')
+                ];
+                if(!in_array($album,$artist[$artistKey]['albums']))
+                    $artist[$artistKey]['albums'][] = $album;
+            }
+
+            if ($result['idSong'] !== null) {
+                $song = [
+                    'id' => $result['idSong'],
+                    'title' => $result['title'],
+                    'cover' => $result['title'],
+                    'createdAt' => $result['song_createdAt']->format('d-m-Y')
+                ];
+
+                if(!in_array($song,$artist[$artistKey]['songs']))
+                    $artist[$artistKey]['songs'][] = $song;
+            }
+        }
+        if($artist)
+            return array_values($artist)[0];
+        else
+            return null;
     }
 }
