@@ -109,6 +109,15 @@ class LoginController extends AbstractController
 
         $this->cache->deleteItem('login_attempts_' . $encodedEmail);
 
+        if(!$user->isActive()) {
+            $data = $this->serializer->serialize(
+                ['error' => true, 'message' => "Le compte n'est plus actif ou est suspendu"],
+                'json'
+            );
+
+            return new JsonResponse($data, Response::HTTP_FORBIDDEN, [], true);
+        }
+        
         // Generate JWT token
         $token = $this->jwtManager->create($user);
 
