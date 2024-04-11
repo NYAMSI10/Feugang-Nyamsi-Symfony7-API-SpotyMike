@@ -22,14 +22,17 @@ class LoginController extends AbstractController
     private $jwtManager;
     private $serializer;
     private $cache;
+    private $passwordHasher;
 
-    public function __construct(EntityManagerInterface $entityManager, JWTTokenManagerInterface $jwtManager, SerializerInterface $serializer, CacheItemPoolInterface $cache)
+
+    public function __construct(EntityManagerInterface $entityManager, UserPasswordHasherInterface $userPasswordHasherInterface, JWTTokenManagerInterface $jwtManager, SerializerInterface $serializer, CacheItemPoolInterface $cache)
     {
         $this->entityManager = $entityManager;
         $this->repository = $entityManager->getRepository(User::class);
         $this->jwtManager = $jwtManager;
         $this->serializer = $serializer;
         $this->cache = $cache;
+        $this->passwordHasher = $userPasswordHasherInterface;
     }
 
     #[Route('/login', name: 'app_login_post', methods: 'POST')]
@@ -137,20 +140,6 @@ class LoginController extends AbstractController
 
         $user = $this->repository->findOneBy(['email' => $email]);
 
-
-        if (!$email) {
-            return $this->json([
-                'error' => true,
-                'message' => "Email manquant. Veuillez fournir votre email pour la récupération du mot de passe ",
-            ], Response::HTTP_BAD_REQUEST);
-        }
-
-        if (!$user) {
-            return $this->json([
-                'error' => true,
-                'message' => "Aucun compte n'est associé à cet email.Veuillez vérifier et réessayer",
-            ], Response::HTTP_NOT_FOUND);
-        }
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             return $this->json([
                 'error' => true,
@@ -158,6 +147,18 @@ class LoginController extends AbstractController
             ], Response::HTTP_BAD_REQUEST);
         }
 
+        if (!$email) {
+            return $this->json([
+                'error' => true,
+                'message' => "Email manquant. Veuillez fournir votre email pour la récupération du mot de passe ",
+            ], Response::HTTP_BAD_REQUEST);
+        }
+        if (!$user) {
+            return $this->json([
+                'error' => true,
+                'message' => "Aucun compte n'est associé à cet email.Veuillez vérifier et réessayer",
+            ], Response::HTTP_NOT_FOUND);
+        }
         if ($this->cache->getItem('blocked_user_' . $encodedEmail)->isHit()) {
             return new JsonResponse(['error' => true, 'message' => "Trop de tentative sur l'email " . $email . " (5max) - Veuillez patienter(2min)"], Response::HTTP_TOO_MANY_REQUESTS);
         }
@@ -182,10 +183,69 @@ class LoginController extends AbstractController
                 $cacheItem_attempt->set($attempts + 1)->expiresAfter(300);
                 $this->cache->save($cacheItem_attempt);
             }
+            // Generate JWT token
+            $token = $this->jwtManager->create($user);
+
+            $tokenCache = $this->cache->getItem('token')->set($token)->expiresAfter(120);
+            $emailCache = $this->cache->getItem('email')->set($email)->expiresAfter(120);
+
+            $this->cache->save($tokenCache);
+            $this->cache->save($emailCache);
+
             return $this->json([
                 'error' => true,
                 'message' => "Un email de réinitialisation de mot de passe a été envoyé à votre adresse email. Veuillez suivre les instructions contenues dans l'email pour réinitialiser votre mot de passe ",
+                'token' => $token
             ], Response::HTTP_OK);
+        }
+    }
+
+    #[Route('/reset-password/{token}', name: 'app_reset_password', methods: 'POST')]
+    public function resetPassword(Request $request): JsonResponse
+    {
+
+        $password = $request->get('password');
+        $password_pattern = '/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?!.* )(?=.*[^a-zA-Z0-9]).{8,20}$/';
+        if ($request->get('token')) {
+
+            if ($request->get('token') == $this->cache->getItem('token')->get()) {
+                $userId = $this->repository->findOneBy(['email' => $this->cache->getItem('email')->get()]);
+                $user = $this->repository->find($userId);
+                if (!$password) {
+                    return $this->json([
+                        'error' => true,
+                        'message' => "Veuillez fournir un nouveau mot de passe"
+                    ], Response::HTTP_BAD_REQUEST);
+                }
+                if (!preg_match($password_pattern, $password)) {
+                    return $this->json([
+                        'error' => true,
+                        'message' => "Le nouveau mot de passe ne respecte pas les critères requis. Le mot de passe doit contenir au moins une majuscule, une minuscule,un chiffre, un caractère spécial et avoir 8 caractères minimum"
+                    ], Response::HTTP_BAD_REQUEST);
+                }
+
+                $hashedPassword = $this->passwordHasher->hashPassword(
+                    $user,
+                    $password
+                );
+                $user->setPassword($hashedPassword);
+                $this->entityManager->persist($user);
+                $this->entityManager->flush();
+                return $this->json([
+                    'error' => true,
+                    'message' => "Votre mot de passe réinitialisé avec succès. Vous pouvez maintenant vous connecter avce votre nouveau mot de passe "
+                ], Response::HTTP_OK);
+            } else {
+                return $this->json([
+                    'error' => true,
+                    'message' => "Votre token de réinitialisation de mot de passe à expiré. Veuillez refaire une demande de réinitialisation  de mot de passe. "
+                ], Response::HTTP_GONE);
+            }
+        } else {
+            return $this->json([
+                'error' => true,
+                'message' => "Votre token de réinitialisation manquant ou invalide. Veuillez utiliser le lien fourni dans l'email de réinitialisation de mot de passe"
+            ], Response::HTTP_BAD_REQUEST);
         }
     }
 }

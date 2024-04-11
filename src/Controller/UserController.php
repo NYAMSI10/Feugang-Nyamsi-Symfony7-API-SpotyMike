@@ -97,8 +97,6 @@ class UserController extends AbstractController
     public function new(Request $request, GenerateId $generateId): JsonResponse
     {
         $user = new User();
-
-
         $firstname = $request->get('firstname');
         $lastname = $request->get('lastname');
         $email = $request->get('email');
@@ -108,7 +106,8 @@ class UserController extends AbstractController
         $formats = 'd/m/Y';
         $date = \DateTime::createFromFormat($formats, $dateBirth);
         $today = new \DateTime();
-        $age = $today->diff($date)->y;
+        $birthdate = new \DateTime($dateBirth);
+        $age = $today->diff($birthdate)->y;
 
 
         $password_pattern = '/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?!.* )(?=.*[^a-zA-Z0-9]).{8,20}$/';
