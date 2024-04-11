@@ -176,7 +176,7 @@ class UserController extends AbstractController
             $user->setLastname($lastname);
             $user->setEmail($email);
             $user->setTel($request->get('tel'));
-            $user->setSexe($request->get('sexe'));
+            $user->setSexe(($request->get('sexe') == 0) ? "Femme" : "Homme");
             $user->setDateBirth($date);
             $user->setRoles(["ROLE_USER"]);
 
