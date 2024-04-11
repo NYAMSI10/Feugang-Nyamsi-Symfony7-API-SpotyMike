@@ -102,6 +102,7 @@ class UserController extends AbstractController
         $email = $request->get('email');
         $password = $request->get('password');
         $dateBirth = $request->get('dateBirth');
+        $sexe = $request->get('sexe');
 
         $formats = 'd/m/Y';
         $date = \DateTime::createFromFormat($formats, $dateBirth);
@@ -139,7 +140,8 @@ class UserController extends AbstractController
                 'message' => "le format de l'email est invalide",
             ], Response::HTTP_BAD_REQUEST);
         }
-        if (($request->get('sexe') != 0 || $request->get('sexe') != 1) && $request->get('sexe')) {
+       
+        if (intval($sexe) != 0 && intval($sexe) != 1 && $sexe) {
             return $this->json([
                 'error' => true,
                 'message' => "La valeur du champ sexe est invalide, les valeurs autorisées sont 0 pour Femme, 1 pour Homme.",
@@ -176,7 +178,10 @@ class UserController extends AbstractController
             $user->setLastname($lastname);
             $user->setEmail($email);
             $user->setTel($request->get('tel'));
-            $user->setSexe($request->get('sexe'));
+            if($sexe) {
+                $user->setSexe(($sexe == 0)?'Femme':'Homme');
+            }
+            
             $user->setDateBirth($date);
             $user->setRoles(["ROLE_USER"]);
 
@@ -217,6 +222,7 @@ class UserController extends AbstractController
 
         $firstname = $request->get('firstname');
         $lastname = $request->get('lastname');
+        $sexe = $request->get('sexe');
         $phone_pattern = '/^(?:\+33|0)[0-9]{9}$/';
         $word_pattern = '/^[A-Za-z]+$/';
 
@@ -251,7 +257,7 @@ class UserController extends AbstractController
             ], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
-        if (($request->get('sexe') != 0 || $request->get('sexe') != 1) && $request->get('sexe')) {
+        if ((($sexe != 0) && ($sexe != 1)) && $sexe) {
             return $this->json([
                 'error' => true,
                 'message' => "La valeur du champ sexe est invalide, les valeurs autorisées sont 0 pour Femme, 1 pour Homme.",
@@ -261,7 +267,9 @@ class UserController extends AbstractController
             $user->setFirstname($firstname);
             $user->setLastname($lastname);
             $user->setTel($request->get('tel'));
-            $user->setSexe($request->get('sexe'));
+            if($sexe) {
+                $user->setSexe(($sexe == 0)?'Femme':'Homme');
+            }
             $this->entityManager->persist($user);
             $this->entityManager->flush();
             return $this->json([
