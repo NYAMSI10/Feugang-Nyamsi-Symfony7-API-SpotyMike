@@ -117,7 +117,7 @@ class UserController extends AbstractController
         if (!$firstname || !$lastname || !$email || !$password || !$dateBirth) {
             return $this->json([
                 'error' => true,
-                'message' => 'Une ou plusieurs données obligatoires sont manquantes',
+                'message' => 'Des champs obligatoires sont manquantes',
             ], Response::HTTP_BAD_REQUEST);
         }
         if (!preg_match($password_pattern, $password)) {
@@ -279,17 +279,24 @@ class UserController extends AbstractController
         }
     }
 
-    #[Route('/user', name: 'user_delete', methods: ['DELETE'])]
+    #[Route('/account-desactivation', name: 'user_delete', methods: ['DELETE'])]
     public function delete(Request $request): JsonResponse
     {
+        $user = $this->repository->findOneBy(['email' => $this->getUser()->getUserIdentifier()]);
 
-        $user = $this->getUser();
-        $this->entityManager->remove($user);
+        if(!$user->isActive()) {
+            return $this->json([
+                'error' => true,
+                'message' => "Le compte est déjà désactivé",
+            ], Response::HTTP_CONFLICT);
+        }
+        $user->setActive(false);
+        $this->entityManager->persist($user);
         $this->entityManager->flush();
 
         return $this->json([
             'error' => false,
-            'message' => 'Votre compte a été supprimé avec succès',
+            'message' => 'Votre compte a été désactivé avec succès.Nous sommes désolés de vous voir partir',
         ], Response::HTTP_OK);
     }
 }
