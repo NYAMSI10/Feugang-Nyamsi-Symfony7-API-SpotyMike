@@ -38,10 +38,18 @@ class Playlist
     #[ORM\ManyToOne(inversedBy: 'Playlist_idPlaylist')]
     private ?PlaylistHasSong $playlistHasSong = null;
 
+    #[ORM\ManyToMany(targetEntity: User::class, mappedBy: 'share')]
+    private Collection $users;
+
+    #[ORM\ManyToOne(inversedBy: 'playlists')]
+    #[ORM\JoinColumn(nullable: false)]
+    private ?User $createdBy = null;
+
     public function __construct()
     {
         $this->createdAt = new \DateTimeImmutable();
         $this->updatedAt = new \DateTimeImmutable();
+        $this->users = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -117,6 +125,45 @@ class Playlist
     public function setPlaylistHasSong(?PlaylistHasSong $playlistHasSong): static
     {
         $this->playlistHasSong = $playlistHasSong;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, User>
+     */
+    public function getUsers(): Collection
+    {
+        return $this->users;
+    }
+
+    public function addUser(User $user): static
+    {
+        if (!$this->users->contains($user)) {
+            $this->users->add($user);
+            $user->addShare($this);
+        }
+
+        return $this;
+    }
+
+    public function removeUser(User $user): static
+    {
+        if ($this->users->removeElement($user)) {
+            $user->removeShare($this);
+        }
+
+        return $this;
+    }
+
+    public function getCreatedBy(): ?User
+    {
+        return $this->createdBy;
+    }
+
+    public function setCreatedBy(?User $createdBy): static
+    {
+        $this->createdBy = $createdBy;
 
         return $this;
     }

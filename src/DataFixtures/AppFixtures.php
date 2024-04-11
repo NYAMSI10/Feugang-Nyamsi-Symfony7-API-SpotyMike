@@ -5,6 +5,8 @@ namespace App\DataFixtures;
 use App\Entity\User;
 use App\Entity\Artist;
 use App\Entity\Album;
+use App\Entity\ArtistHasLabel;
+use App\Entity\Label;
 use App\Entity\Playlist;
 use App\Entity\PlaylistHasSong;
 use App\Entity\Song;
@@ -23,6 +25,16 @@ class AppFixtures extends Fixture
 
     public function load(ObjectManager $manager): void
     {
+
+        //Création d'un label
+
+        for ($i = 0; $i < 3; $i++) {
+            $label = new Label();
+            $label->setNom("Label_" . rand(0, 999));
+            $manager->persist($label);
+        }
+        $manager->flush();
+        
         // Création d'un user "normal"
         $user = new User();
         $user->setIdUser("User_" . rand(0, 999));
@@ -34,7 +46,7 @@ class AppFixtures extends Fixture
         $user->setRoles(["ROLE_USER"]);
         $user->setCreatedAt(new \DateTimeImmutable());
         $user->setUpdatedAt(new \DateTimeImmutable());
-        $user->setPassword($this->userPasswordHasher->hashPassword($user,'Admin2024'));
+        $user->setPassword($this->userPasswordHasher->hashPassword($user,'Admin2024@'));
         $manager->persist($user);
 
 
@@ -48,15 +60,22 @@ class AppFixtures extends Fixture
         $userArtist->setRoles(["ROLE_ARTIST","ROLE_USER"]);
         $userArtist->setCreatedAt(new \DateTimeImmutable());
         $userArtist->setUpdatedAt(new \DateTimeImmutable());
-        $userArtist->setPassword($this->userPasswordHasher->hashPassword($userArtist, "password"));
+        $userArtist->setPassword($this->userPasswordHasher->hashPassword($userArtist, "Password20#"));
         $manager->persist($userArtist);
+
+        
 
         //Création d'un artist
         $artist = new Artist();
         $artist->setUserIdUser($userArtist);
         $artist->setFullname($userArtist->getFirstname() . ' ' . $userArtist->getLastname());
-        $artist->setLabel("Maisons de disques");
         $manager->persist($artist);
+
+        //Création d'un artisthaslabel
+        $artisthaslabel = new ArtistHasLabel();
+        $artisthaslabel->setIdArtist($artist);
+        $artisthaslabel->setIdLabel($manager->getRepository(Label::class)->find(1));
+        $manager->persist($artisthaslabel);
 
 
         // Création des albums.
@@ -81,11 +100,7 @@ class AppFixtures extends Fixture
             $song->setAlbum($album);
             $manager->persist($song);
         }
-
         
-
-       
-
         $manager->flush();
     }
 }

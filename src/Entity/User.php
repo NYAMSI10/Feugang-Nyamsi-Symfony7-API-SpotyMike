@@ -3,6 +3,8 @@
 namespace App\Entity;
 
 use App\Repository\UserRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
@@ -48,7 +50,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[ORM\Column(length: 15, nullable: true)]
     #[Groups(["getUsers", "getLogin"])]
-    #[Assert\Regex(pattern: '/^(?:\+33|0)[0-9]{9}$/',message:'Telephone')]
     #[Assert\Length(min: 10, max: 12, maxMessage: 'Telephone', minMessage: 'Telephone', exactMessage: 'Telephone')]
     private ?string $tel = null;
 
@@ -63,7 +64,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[ORM\Column(type: Types::DATE_MUTABLE)]
     #[Groups(["getUsers", "getLogin", "getArtist"])]
-    #[Context([DateTimeNormalizer::FORMAT_KEY =>' d-m-Y'])]
+    #[Context([DateTimeNormalizer::FORMAT_KEY => ' d/m/Y'])]
     private ?\DateTimeInterface $dateBirth = null;
 
     #[ORM\Column(length: 30, nullable: true)]
@@ -76,19 +77,34 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[ORM\Column]
     #[Groups(["getUsers", "getLogin"])]
-    #[Context([DateTimeNormalizer::FORMAT_KEY =>' d-m-Y'])]
+    #[Context([DateTimeNormalizer::FORMAT_KEY => ' Y-m-d'])]
     private ?\DateTimeImmutable $createdAt = null;
 
     #[ORM\Column]
     #[Groups(["getUsers"])]
-    #[Context([DateTimeNormalizer::FORMAT_KEY =>' d-m-Y'])]
+    #[Context([DateTimeNormalizer::FORMAT_KEY => ' Y-m-d'])]
     private ?\DateTimeImmutable $updatedAt = null;
+
+    #[ORM\ManyToMany(targetEntity: Artist::class, inversedBy: 'users')]
+    private Collection $followers;
+
+    #[ORM\ManyToMany(targetEntity: Playlist::class, inversedBy: 'users')]
+    private Collection $share;
+
+    #[ORM\OneToMany(targetEntity: Playlist::class, mappedBy: 'createdBy')]
+    private Collection $playlists;
+
+    #[ORM\Column]
+    private ?bool $active = true;
 
     public function __construct()
     {
         $this->updatedAt = new \DateTimeImmutable();
         $this->createdAt = new \DateTimeImmutable();
         //$this->idUser = random_bytes(10);
+        $this->followers = new ArrayCollection();
+        $this->share = new ArrayCollection();
+        $this->playlists = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -274,6 +290,96 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     public function setUpdatedAt(\DateTimeImmutable $updatedAt): static
     {
         $this->updatedAt = $updatedAt;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Artist>
+     */
+    public function getFollowers(): Collection
+    {
+        return $this->followers;
+    }
+
+    public function addFollower(Artist $follower): static
+    {
+        if (!$this->followers->contains($follower)) {
+            $this->followers->add($follower);
+        }
+
+        return $this;
+    }
+
+    public function removeFollower(Artist $follower): static
+    {
+        $this->followers->removeElement($follower);
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Playlist>
+     */
+    public function getShare(): Collection
+    {
+        return $this->share;
+    }
+
+    public function addShare(Playlist $share): static
+    {
+        if (!$this->share->contains($share)) {
+            $this->share->add($share);
+        }
+
+        return $this;
+    }
+
+    public function removeShare(Playlist $share): static
+    {
+        $this->share->removeElement($share);
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Playlist>
+     */
+    public function getPlaylists(): Collection
+    {
+        return $this->playlists;
+    }
+
+    public function addPlaylist(Playlist $playlist): static
+    {
+        if (!$this->playlists->contains($playlist)) {
+            $this->playlists->add($playlist);
+            $playlist->setCreatedBy($this);
+        }
+
+        return $this;
+    }
+
+    public function removePlaylist(Playlist $playlist): static
+    {
+        if ($this->playlists->removeElement($playlist)) {
+            // set the owning side to null (unless already changed)
+            if ($playlist->getCreatedBy() === $this) {
+                $playlist->setCreatedBy(null);
+            }
+        }
+
+        return $this;
+    }
+
+    public function isActive(): ?bool
+    {
+        return $this->active;
+    }
+
+    public function setActive(bool $active): static
+    {
+        $this->active = $active;
 
         return $this;
     }
