@@ -112,7 +112,7 @@ class LoginController extends AbstractController
 
         $this->cache->deleteItem('login_attempts_' . $encodedEmail);
 
-        if(!$user->isActive()) {
+        if (!$user->isActive()) {
             $data = $this->serializer->serialize(
                 ['error' => true, 'message' => "Le compte n'est plus actif ou est suspendu"],
                 'json'
@@ -241,7 +241,7 @@ class LoginController extends AbstractController
                 $this->entityManager->persist($user);
                 $this->entityManager->flush();
                 return $this->json([
-                    'error' => true,
+                    'error' => false,
                     'message' => "Votre mot de passe réinitialisé avec succès. Vous pouvez maintenant vous connecter avce votre nouveau mot de passe "
                 ], Response::HTTP_OK);
             } else {
