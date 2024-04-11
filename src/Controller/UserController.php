@@ -283,7 +283,7 @@ class UserController extends AbstractController
     {
         $user = $this->repository->findOneBy(['email' => $this->getUser()->getUserIdentifier()]);
 
-        if(!$user->isActive()) {
+        if (!$user->isActive()) {
             return $this->json([
                 'error' => true,
                 'message' => "Le compte est déjà désactivé",
