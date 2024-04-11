@@ -71,7 +71,7 @@ class LoginController extends AbstractController
 
 
         if ($this->cache->getItem('blocked_user_' . $encodedEmail)->isHit()) {
-            return new JsonResponse(['error' => true, 'message' => "Trop de tentative sur l'email " . $email . " (5max) - Veuillez patienter(2min)"], Response::HTTP_TOO_MANY_REQUESTS);
+            return new JsonResponse(['error' => true, 'message' => "Trop de tentatives de connexion (5max) - Veuillez réessayer ultérieurement -2min d'attente"], Response::HTTP_TOO_MANY_REQUESTS);
         }
 
         $attempts = $this->cache->getItem('login_attempts_' . $encodedEmail)->get();
@@ -83,7 +83,7 @@ class LoginController extends AbstractController
                 $cacheItem_block->set(true)->expiresAfter(120);
                 $this->cache->save($cacheItem_block);
             }
-            return new JsonResponse(['message' => "Trop de tentative sur l'email " . $email . " (5max) - Veuillez patienter(2min)"], Response::HTTP_TOO_MANY_REQUESTS);
+            return new JsonResponse(['message' => "Trop de tentatives de connexion (5max) - Veuillez réessayer ultérieurement - 2min d'attente"], Response::HTTP_TOO_MANY_REQUESTS);
         }
 
 
@@ -117,7 +117,7 @@ class LoginController extends AbstractController
 
             return new JsonResponse($data, Response::HTTP_FORBIDDEN, [], true);
         }
-        
+
         // Generate JWT token
         $token = $this->jwtManager->create($user);
 
