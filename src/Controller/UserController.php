@@ -139,7 +139,8 @@ class UserController extends AbstractController
                 'message' => "le format de l'email est invalide",
             ], Response::HTTP_BAD_REQUEST);
         }
-        if (($request->get('sexe') != 0 || $request->get('sexe') != 1) && $request->get('sexe')) {
+
+        if (($request->get('sexe') !== 0 || $request->get('sexe') != 1) && $request->get('sexe')) {
             return $this->json([
                 'error' => true,
                 'message' => "La valeur du champ sexe est invalide, les valeurs autorisées sont 0 pour Femme, 1 pour Homme.",
