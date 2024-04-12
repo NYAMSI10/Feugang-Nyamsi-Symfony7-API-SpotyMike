@@ -49,11 +49,11 @@ class ArtistController extends AbstractController
         $page = 1;
         $limit = 5;
 
-        $check_visibility = false;
+        $check_visibility = 0;
         $user = $this->entityManager->getRepository(User::class)->findOneBy(['email' => $this->getUser()->getUserIdentifier()]);
 
         if (!in_array('ROLE_ARTIST', $user->getRoles(), true))
-            $check_visibility = true;
+            $check_visibility = 1;
 
 
         $current_page = $request->get('currentPage');
@@ -68,6 +68,7 @@ class ArtistController extends AbstractController
             } 
         }
        
+        
 
         $artistes_data = $this->repository->findAllWithPagination($check_visibility,($current_page)?intval($current_page):$page,$limit);
         if($artistes_data['artists']) {
@@ -133,7 +134,7 @@ class ArtistController extends AbstractController
     {
         $user = $this->entityManager->getRepository(User::class)->findOneBy(['email' => $this->getUser()->getUserIdentifier()]);
         $fullname = $request->request->get('fullname');
-        $id_label = $request->get('label');
+        $id_label = intval($request->get('label'));
         $description = $request->get('description');
 
         if (!in_array('ROLE_ARTIST', $user->getRoles(), true)) {
@@ -147,7 +148,7 @@ class ArtistController extends AbstractController
                 return new JsonResponse($data, Response::HTTP_BAD_REQUEST, [], true);
             }
     
-            if(!is_int($id_label)) {
+            if(intval($id_label) != 0) {
                 $data = $this->serializer->serialize(
                     ['error' => true, 'message' => "Le format de l'id du label est invalide"],
                     'json'
