@@ -21,7 +21,7 @@ class Artist
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\OneToOne(inversedBy: 'artist', cascade: ['persist', 'remove'])]
+    #[ORM\OneToOne(inversedBy: 'artist')]
     #[ORM\JoinColumn(nullable: false)]
     #[SerializedName('artist')]
     #[Groups(["getArtist", "getArtists"])]
