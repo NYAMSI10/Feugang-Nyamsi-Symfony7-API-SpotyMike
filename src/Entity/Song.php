@@ -22,11 +22,11 @@ class Song
 
 
     #[ORM\Column(length: 90, unique: true)]
-    #[Groups(["getSongs","getSong","getAlbums"])]
+    #[Groups(["getSongs", "getSong", "getAlbums"])]
     #[SerializedName('id')]
     private ?string $idSong = null;
 
-    #[Groups(["getSongs","getSong", "getAlbums"])]
+    #[Groups(["getSongs", "getSong", "getAlbums"])]
     #[ORM\Column(length: 255)]
     private ?string $title = null;
 
@@ -36,7 +36,7 @@ class Song
     private ?string $url = null;
 
 
-    #[Groups(["getSongs","getSong", "getAlbums"])]
+    #[Groups(["getSongs", "getSong", "getAlbums"])]
     #[ORM\Column(length: 125)]
     private ?string $cover = null;
 
@@ -52,9 +52,9 @@ class Song
     #[ORM\ManyToOne(inversedBy: 'Song_idSong')]
     private ?PlaylistHasSong $playlistHasSong = null;
 
-    #[Groups(["getSongs","getSong","getAlbums"])]
+    #[Groups(["getSongs", "getSong", "getAlbums"])]
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
-    #[Context([DateTimeNormalizer::FORMAT_KEY =>' d-m-Y'])]
+    #[Context([DateTimeNormalizer::FORMAT_KEY => ' Y-m-d'])]
     private ?\DateTimeInterface $createdAt = null;
 
     public function __construct()

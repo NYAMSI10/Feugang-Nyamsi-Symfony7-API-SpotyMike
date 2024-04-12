@@ -24,14 +24,15 @@ class Artist
     #[ORM\OneToOne(inversedBy: 'artist', cascade: ['persist', 'remove'])]
     #[ORM\JoinColumn(nullable: false)]
     #[SerializedName('artist')]
-    #[Groups(["getArtist","getArtists"])]
+    #[Groups(["getArtist", "getArtists"])]
     private ?User $User_idUser = null;
 
 
     #[ORM\Column(length: 90, unique: true)]
     #[Assert\NotBlank(message: 'fullname')]
     #[Assert\NotNull(message: 'fullname')]
-    #[Assert\Regex(pattern: '/^[a-zA-Z0-9]*$/', message:'Fullname')]
+    #[Assert\Regex(pattern: '/^[a-zA-Z0-9]*$/', message: 'Fullname')]
+    #[Groups(["getLogin"])]
     private ?string $fullname = null;
 
 
@@ -42,6 +43,7 @@ class Artist
 
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
+    #[Groups(["getLogin"])]
     private ?string $description = null;
 
 
@@ -56,7 +58,7 @@ class Artist
     #[Groups(["getArtist"])]
     #[SerializedName('Artist.createdAt')]
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
-    #[Context([DateTimeNormalizer::FORMAT_KEY => ' d-m-Y'])]
+    #[Context([DateTimeNormalizer::FORMAT_KEY => 'Y-m-d'])]
     private ?\DateTimeInterface $createdAt = null;
 
     #[ORM\ManyToMany(targetEntity: User::class, mappedBy: 'followers')]
