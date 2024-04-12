@@ -44,6 +44,7 @@ class ArtistRepository extends ServiceEntityRepository
                     al.nom AS nom,
                     al.categ AS categ,
                     al.cover AS cover,
+                    al.year AS album_year,
                     DATE_FORMAT(al.created_at, '%Y-%m-%d') AS created_at_album,
                     l.nom AS label,
                     al.visibility AS album_visibility,
@@ -111,6 +112,7 @@ class ArtistRepository extends ServiceEntityRepository
                         'categ' => $result['categ'],
                         'cover' => $result['cover'],
                         'label' => $result['label'],
+                        'year' => $result['album_year'],
                         'createdAt' => $result['created_at_album'],
                         'songs' => []
                     ];
@@ -163,6 +165,7 @@ class ArtistRepository extends ServiceEntityRepository
                     al.nom AS nom,
                     al.categ AS categ,
                     al.cover AS cover,
+                    al.year AS album_year,
                     DATE_FORMAT(al.created_at, '%Y-%m-%d') AS created_at_album,
                     l.nom AS label,
                     al.visibility AS album_visibility,
@@ -219,6 +222,7 @@ class ArtistRepository extends ServiceEntityRepository
                     'sexe' => $result['sexe'],
                     'dateBirth' => $result['dateBirth']/*->format('d-m-Y')*/,
                     'Artist.createdAt' => $result['artist_createdAt']/*->format('d-m-Y')*/,
+                    'year' => $result['album_year'],
                     'albums' => [],
 
                 ];
