@@ -55,7 +55,7 @@ class Artist
     #[ORM\OneToMany(targetEntity: Album::class, mappedBy: 'artist_User_idUser', cascade: ['persist', 'remove'])]
     private Collection $albums;
 
-    #[Groups(["getArtist"])]
+    #[Groups(["getArtist", "getLogin"])]
     #[SerializedName('Artist.createdAt')]
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
     #[Context([DateTimeNormalizer::FORMAT_KEY => 'Y-m-d'])]
