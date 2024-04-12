@@ -32,6 +32,7 @@ class Artist
     #[Assert\NotBlank(message: 'fullname')]
     #[Assert\NotNull(message: 'fullname')]
     #[Assert\Regex(pattern: '/^[a-zA-Z0-9]*$/', message:'Fullname')]
+    #[Groups(["getLogin"])]
     private ?string $fullname = null;
 
 
@@ -42,6 +43,7 @@ class Artist
 
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
+    #[Groups(["getLogin"])]
     private ?string $description = null;
 
 
@@ -53,7 +55,7 @@ class Artist
     #[ORM\OneToMany(targetEntity: Album::class, mappedBy: 'artist_User_idUser', cascade: ['persist', 'remove'])]
     private Collection $albums;
 
-    #[Groups(["getArtist"])]
+    #[Groups(["getArtist","getLogin"])]
     #[SerializedName('Artist.createdAt')]
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
     #[Context([DateTimeNormalizer::FORMAT_KEY => ' d-m-Y'])]
