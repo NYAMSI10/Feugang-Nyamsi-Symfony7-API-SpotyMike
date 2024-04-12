@@ -324,13 +324,10 @@ class ArtistController extends AbstractController
    
 
     #[Route('/artist', name: 'artist_delete', methods: ['DELETE'])]
-    public function delete(Request $request, Artist $artist): JsonResponse
+    public function delete(Request $request): JsonResponse
     {
-        $token = $request->get('token');
-
-        $payload = $this->jwtManager->decode($token);
-        $username = $payload['username'];
-        $artist = $this->repository->findByEmail($username);
+        
+        $artist = $this->repository->findOneBy(['User_idUser' => $this->getUser()->getId()]);
         
         if (!$artist) {
             $data = $this->serializer->serialize(
