@@ -26,46 +26,65 @@ class ArtistRepository extends ServiceEntityRepository
     {
 
         $qb = $this->createQueryBuilder('a')
-        ->select('COUNT(DISTINCT a.id) as totalArtists')
-        ->leftJoin('a.User_idUser', 'u')
-        ->leftJoin('a.songs', 's')
-        ->leftJoin('a.albums', 'al')
-        ->leftJoin('App\Entity\ArtistHasLabel', 'ahl', 'WITH', 'a.id = ahl.idArtist')
-        ->leftJoin('App\Entity\Label', 'l', 'WITH', 'l.id = ahl.idLabel');
-        
-
+                ->select('COUNT(DISTINCT a.id) as totalArtists');
         if($checkvisibility) {
-            $qb->where('s.visibility = :songVisibility')
-            ->andWhere('al.visibility = :albumVisibility')
-            ->andWhere('a.active = :active')
-            ->setParameter('songVisibility', true)
-            ->setParameter('albumVisibility', true)
+            $qb->andWhere('a.active = :active')
             ->setParameter('active', true);
         }
-        $qb->andWhere('al.createdAt BETWEEN ahl.entrydate AND ahl.issuedate');
 
         $totalArtists = $qb->getQuery()->getSingleScalarResult();
+        $sql = "SELECT
+                    u.firstname AS firstname,
+                    u.lastname AS lastname,
+                    u.sexe AS sexe,
+                    DATE_FORMAT(u.date_birth, '%d/%m/%Y') AS dateBirth,
+                    DATE_FORMAT(a.created_at, '%Y-%m-%d') AS artist_createdAt,
+                    a.fullname AS artist_name,
+                    al.id AS idAlbum,
+                    al.nom AS nom,
+                    al.categ AS categ,
+                    al.cover AS cover,
+                    DATE_FORMAT(al.created_at, '%Y-%m-%d') AS created_at_album,
+                    l.nom AS label,
+                    al.visibility AS album_visibility,
+                    GROUP_CONCAT(s.id_song) AS song_ids,
+                    GROUP_CONCAT(s.title) AS song_titles,
+                    GROUP_CONCAT(s.cover) AS song_covers,
+                    GROUP_CONCAT(
+                        DATE_FORMAT(s.created_at, '%Y-%m-%d')
+                    ) AS song_created_ats
+                FROM 
+                    artist a
+                LEFT JOIN 
+                    user u ON a.user_id_user_id = u.id
+                LEFT JOIN 
+                    album al ON a.id = al.artist_user_id_user_id";
 
-        $qb = $this->createQueryBuilder('a')
-            ->select('u.firstname','u.lastname','u.sexe','u.dateBirth','a.createdAt AS artist_createdAt', 's.idSong','s.title','s.cover AS song_cover','s.createdAt AS song_createdAt', 'al.idAlbum','al.nom','al.categ','al.cover','al.createdAt AS album_created','l.nom AS label')
-            ->leftJoin('a.User_idUser', 'u')
-            ->leftJoin('a.songs', 's')
-            ->leftJoin('a.albums', 'al')
-            ->leftJoin('App\Entity\ArtistHasLabel', 'ahl', 'WITH', 'a.id = ahl.idArtist')
-            ->leftJoin('App\Entity\Label', 'l', 'WITH', 'l.id = ahl.idLabel')
-            //->where('al.createdAt BETWEEN ahl.entrydate AND ahl.issuedate')
-            ->where('s.visibility = :songVisibility')
-            ->andWhere('al.visibility = :albumVisibility')
-            ->andWhere('a.active = :active')
-            ->andWhere('al.createdAt BETWEEN ahl.entrydate AND ahl.issuedate')
-            ->setParameter('songVisibility', true)
-            ->setParameter('albumVisibility', true)
-            ->setParameter('active', true)
-            ->setFirstResult(($page - 1) * $limit)
-            ->setMaxResults($limit);
-        
-        $results = $qb->getQuery()->getResult();
+        if($checkvisibility) {
+            $sql .= "AND al.visibility =  $checkvisibility";
+        }
+        $sql .= " LEFT JOIN song s ON al.id = s.album_id"   ;
 
+        if($checkvisibility) {
+            $sql .= "AND al.visibility =  $checkvisibility";
+        }
+        $sql .= "
+                LEFT JOIN 
+                    artist_has_label ahl ON a.id = ahl.id_artist_id
+                LEFT JOIN 
+                    label l ON l.id = ahl.id_label_id
+                    AND al.created_at BETWEEN ahl.entrydate AND ahl.issuedate
+                WHERE ";
+        if($checkvisibility) {
+            $sql .= "a.active = $checkvisibility AND";
+        }
+        $sql .="
+                     (al.id IS NULL OR l.id IS NOT NULL)
+                GROUP BY
+                    al.id
+                ORDER BY 
+                    a.id, al.id";
+        $results = $this->getEntityManager()->getConnection()->executeQuery($sql, [])->fetchAll();
         
         $artists = [];
         foreach ($results as $result) {
@@ -76,44 +95,54 @@ class ArtistRepository extends ServiceEntityRepository
                     'firstname' => $result['firstname'],
                     'lastname' => $result['lastname'],
                     'sexe' => $result['sexe'],
-                    'dateBirth' => $result['dateBirth']->format('d-m-Y'),
-                    'Artist.createdAt' =>$result['artist_createdAt']->format('d-m-Y'),
+                    'dateBirth' => $result['dateBirth']/*->format('d-m-Y')*/,
+                    'Artist.createdAt' =>$result['artist_createdAt']/*->format('d-m-Y')*/,
                     'albums' => [],
-                    'songs' => [],
+                    
                 ];
             }
 
             if ($result['idAlbum'] !== null) {
-                $album = [
-                    'id' => $result['idAlbum'],
-                    'nom' => $result['nom'],
-                    'categ' => $result['categ'],
-                    'cover' => $result['cover'],
-                    'label' => $result['label'],
-                    'createdAt' => $result['album_created']->format('d-m-Y')
-                ];
-                if(!in_array($album,$artists[$artistKey]['albums']))
-                    $artists[$artistKey]['albums'][] = $album;
-            }
+                
+                if (!isset($artists[$artistKey]['albums'][$result['idAlbum']])) {
+                    $artists[$artistKey]['albums'][$result['idAlbum']] = [
+                        'id' => $result['idAlbum'],
+                        'nom' => $result['nom'],
+                        'categ' => $result['categ'],
+                        'cover' => $result['cover'],
+                        'label' => $result['label'],
+                        'createdAt' => $result['created_at_album'],
+                        'songs' => []
+                    ];
+                }
 
-            if ($result['idSong'] !== null) {
-                $song = [
-                    'id' => $result['idSong'],
-                    'title' => $result['title'],
-                    'cover' => $result['title'],
-                    'createdAt' => $result['song_createdAt']->format('d-m-Y')
-                ];
+                $songIds = explode(',', $result['song_ids']);
+                $songTitles = explode(',', $result['song_titles']);
+                $songCovers = explode(',', $result['song_covers']);
+                $songcreates = explode(',',$result['song_created_ats']);
 
-                if(!in_array($song,$artists[$artistKey]['songs']))
-                    $artists[$artistKey]['songs'][] = $song;
-            }
+                $numSongs = count($songIds);
+                for ($i = 0; $i < $numSongs; $i++) {
+                    $artists[$artistKey]['albums'][$result['idAlbum']]['songs'][] = [
+                        'id' => $songIds[$i],
+                        'title' => $songTitles[$i],
+                        'cover' => $songCovers[$i],
+                        'createdAt' => $songcreates[$i]
+                    ];
+                }
+                    
+            }     
         }
+
+        $limit=1;
+        $offset = ($page - 1) * $limit;
+        $returnArtist = array_slice($artists, $offset, $limit);
        
         $totalPages = ceil($totalArtists / $limit);
         $currentPage = $page;
 
         return array(
-            'artists' => array_values($artists),
+            'artists' => array_values($returnArtist),
             'pagination' => array(
                 'currentPage' => $currentPage,
                 'totalPages' => (int)$totalPages,
@@ -124,31 +153,63 @@ class ArtistRepository extends ServiceEntityRepository
 
     public function findByArtistAndAlbumAndSong ($artist_fullname, $checkvisibility)
     {
-        $qb = $this->createQueryBuilder('a')
-        ->select('u.firstname','u.lastname','u.sexe','u.dateBirth','a.createdAt AS artist_createdAt', 's.idSong','s.title','s.cover AS song_cover','s.createdAt AS song_createdAt', 'al.idAlbum','al.nom','al.categ','al.cover','al.createdAt AS album_created','l.nom AS label')
-        ->leftJoin('a.User_idUser', 'u')
-        ->leftJoin('a.songs', 's')
-        ->leftJoin('a.albums', 'al')
-        ->leftJoin('App\Entity\ArtistHasLabel', 'ahl', 'WITH', 'a.id = ahl.idArtist')
-        ->leftJoin('App\Entity\Label', 'l', 'WITH', 'l.id = ahl.idLabel')
-        ->where('a.fullname = :fullname')
-        ->setParameter('fullname', $artist_fullname);
-        
+        $sql = "SELECT
+                    u.firstname AS firstname,
+                    u.lastname AS lastname,
+                    u.sexe AS sexe,
+                    DATE_FORMAT(u.date_birth, '%d/%m/%Y') AS dateBirth,
+                    DATE_FORMAT(a.created_at, '%Y-%m-%d') AS artist_createdAt,
+                    a.fullname AS artist_name,
+                    al.id AS idAlbum,
+                    al.nom AS nom,
+                    al.categ AS categ,
+                    al.cover AS cover,
+                    DATE_FORMAT(al.created_at, '%Y-%m-%d') AS created_at_album,
+                    l.nom AS label,
+                    al.visibility AS album_visibility,
+                    GROUP_CONCAT(s.id_song) AS song_ids,
+                    GROUP_CONCAT(s.title) AS song_titles,
+                    GROUP_CONCAT(s.cover) AS song_covers,
+                    GROUP_CONCAT(
+                        DATE_FORMAT(s.created_at, '%Y-%m-%d')
+                    ) AS song_created_ats
+                FROM 
+                    artist a
+                LEFT JOIN 
+                    user u ON a.user_id_user_id = u.id
+                LEFT JOIN 
+                    album al ON a.id = al.artist_user_id_user_id";
 
         if($checkvisibility) {
-            $qb->andWhere('s.visibility = :songVisibility')
-            ->andWhere('al.visibility = :albumVisibility')
-            ->andWhere('a.active = :active')
-            ->setParameter('songVisibility', true)
-            ->setParameter('albumVisibility', true)
-            ->setParameter('active', true);
+            $sql .= "AND al.visibility =  $checkvisibility";
         }
-        $qb->andWhere('al.createdAt BETWEEN ahl.entrydate AND ahl.issuedate');
+        $sql .= " LEFT JOIN song s ON al.id = s.album_id"   ;
+
+        if($checkvisibility) {
+            $sql .= "AND al.visibility =  $checkvisibility";
+        }
+        $sql .= "
+                LEFT JOIN 
+                    artist_has_label ahl ON a.id = ahl.id_artist_id
+                LEFT JOIN 
+                    label l ON l.id = ahl.id_label_id
+                    AND al.created_at BETWEEN ahl.entrydate AND ahl.issuedate
+                WHERE ";
+        if($checkvisibility) {
+            $sql .= "a.active = $checkvisibility AND";
+        }
+        $sql .="
+                    a.fullname = '".$artist_fullname."'
+                    AND (al.id IS NULL OR l.id IS NOT NULL)
+                GROUP BY
+                    al.id
+                ORDER BY 
+                    a.id, al.id";
 
        
-        $results = $qb->getQuery()->getResult();
-       
+        $results = $this->getEntityManager()->getConnection()->executeQuery($sql, [])->fetchAll();
         $artist = [];
+
         foreach ($results as $result) {
             $artistKey = $result['firstname'] . ' ' . $result['lastname'];
 
@@ -157,41 +218,51 @@ class ArtistRepository extends ServiceEntityRepository
                     'firstname' => $result['firstname'],
                     'lastname' => $result['lastname'],
                     'sexe' => $result['sexe'],
-                    'dateBirth' => $result['dateBirth']->format('d-m-Y'),
-                    'Artist.createdAt' =>$result['artist_createdAt']->format('d-m-Y'),
+                    'dateBirth' => $result['dateBirth']/*->format('d-m-Y')*/,
+                    'Artist.createdAt' =>$result['artist_createdAt']/*->format('d-m-Y')*/,
                     'albums' => [],
-                    'songs' => [],
+                    
                 ];
             }
 
             if ($result['idAlbum'] !== null) {
-                $album = [
-                    'id' => $result['idAlbum'],
-                    'nom' => $result['nom'],
-                    'categ' => $result['categ'],
-                    'cover' => $result['cover'],
-                    'label' => $result['label'],
-                    'createdAt' => $result['album_created']->format('d-m-Y')
-                ];
-                if(!in_array($album,$artist[$artistKey]['albums']))
-                    $artist[$artistKey]['albums'][] = $album;
-            }
+                
+                if (!isset($artist[$artistKey]['albums'][$result['idAlbum']])) {
+                    $artist[$artistKey]['albums'][$result['idAlbum']] = [
+                        'id' => $result['idAlbum'],
+                        'nom' => $result['nom'],
+                        'categ' => $result['categ'],
+                        'cover' => $result['cover'],
+                        'label' => $result['label'],
+                        'createdAt' => $result['created_at_album'],
+                        'songs' => []
+                    ];
+                }
 
-            if ($result['idSong'] !== null) {
-                $song = [
-                    'id' => $result['idSong'],
-                    'title' => $result['title'],
-                    'cover' => $result['title'],
-                    'createdAt' => $result['song_createdAt']->format('d-m-Y')
-                ];
+                $songIds = explode(',', $result['song_ids']);
+                $songTitles = explode(',', $result['song_titles']);
+                $songCovers = explode(',', $result['song_covers']);
+                $songcreates = explode(',',$result['song_created_ats']);
 
-                if(!in_array($song,$artist[$artistKey]['songs']))
-                    $artist[$artistKey]['songs'][] = $song;
-            }
+                $numSongs = count($songIds);
+                for ($i = 0; $i < $numSongs; $i++) {
+                    $artist[$artistKey]['albums'][$result['idAlbum']]['songs'][] = [
+                        'id' => $songIds[$i],
+                        'title' => $songTitles[$i],
+                        'cover' => $songCovers[$i],
+                        'createdAt' => $songcreates[$i]
+                    ];
+                }
+                    
+            }     
         }
+        
         if($artist)
             return array_values($artist)[0];
         else
             return null;
     }
+
+
+    
 }

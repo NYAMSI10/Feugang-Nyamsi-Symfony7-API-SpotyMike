@@ -21,17 +21,18 @@ class Artist
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\OneToOne(inversedBy: 'artist', cascade: ['persist', 'remove'])]
+    #[ORM\OneToOne(inversedBy: 'artist')]
     #[ORM\JoinColumn(nullable: false)]
     #[SerializedName('artist')]
-    #[Groups(["getArtist","getArtists"])]
+    #[Groups(["getArtist", "getArtists"])]
     private ?User $User_idUser = null;
 
 
     #[ORM\Column(length: 90, unique: true)]
     #[Assert\NotBlank(message: 'fullname')]
     #[Assert\NotNull(message: 'fullname')]
-    #[Assert\Regex(pattern: '/^[a-zA-Z0-9]*$/', message:'Fullname')]
+    #[Assert\Regex(pattern: '/^[a-zA-Z0-9]*$/', message: 'Fullname')]
+    #[Groups(["getLogin"])]
     private ?string $fullname = null;
 
 
@@ -42,6 +43,7 @@ class Artist
 
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
+    #[Groups(["getLogin"])]
     private ?string $description = null;
 
 
@@ -53,10 +55,10 @@ class Artist
     #[ORM\OneToMany(targetEntity: Album::class, mappedBy: 'artist_User_idUser', cascade: ['persist', 'remove'])]
     private Collection $albums;
 
-    #[Groups(["getArtist"])]
+    #[Groups(["getArtist", "getLogin"])]
     #[SerializedName('Artist.createdAt')]
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
-    #[Context([DateTimeNormalizer::FORMAT_KEY => ' d-m-Y'])]
+    #[Context([DateTimeNormalizer::FORMAT_KEY => 'Y-m-d'])]
     private ?\DateTimeInterface $createdAt = null;
 
     #[ORM\ManyToMany(targetEntity: User::class, mappedBy: 'followers')]

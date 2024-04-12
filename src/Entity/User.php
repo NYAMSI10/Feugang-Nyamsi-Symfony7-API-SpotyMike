@@ -53,7 +53,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[Assert\Length(min: 10, max: 12, maxMessage: 'Telephone', minMessage: 'Telephone', exactMessage: 'Telephone')]
     private ?string $tel = null;
 
-    #[ORM\OneToOne(mappedBy: 'User_idUser', cascade: ['persist', 'remove'])]
+    #[ORM\OneToOne(mappedBy: 'User_idUser')]
     #[Groups(["getLogin"])]
     private ?Artist $artist = null;
 
@@ -64,7 +64,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[ORM\Column(type: Types::DATE_MUTABLE)]
     #[Groups(["getUsers", "getLogin", "getArtist"])]
-    #[Context([DateTimeNormalizer::FORMAT_KEY => ' d/m/Y'])]
+    #[Context([DateTimeNormalizer::FORMAT_KEY => ' d-m-Y'])]
     private ?\DateTimeInterface $dateBirth = null;
 
     #[ORM\Column(length: 30, nullable: true)]

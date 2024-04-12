@@ -69,20 +69,25 @@ class SongController extends AbstractController
     #[Route('song', name: 'app_create_song', methods: ['POST'])]
     public function create(Request $request, AlbumRepository $albumRepository, PlaylistHasSongRepository $playlistHasSongRepository, ArtistRepository $artistRepository, GenerateId $generateId): JsonResponse
     {
-        $song = new Song();
-        $song->setIdSong($generateId->randId())
-            ->setTitle($request->get('title'))
-            ->setUrl($request->get('url'))
-            ->setCover($request->get('cover'))
-            ->setVisibility($request->get('visibility'))
-            ->addArtistIdUser($artistRepository->find($request->get('idartistuser')))
-            ->setAlbum($albumRepository->find($request->get('idalbum')))
-            ->setPlaylistHasSong($playlistHasSongRepository->find($request->get('idplaylisthassong')));
-        $this->entityManager->persist($song);
-        $this->entityManager->flush();
-        $jsonSongList = $this->serializer->serialize($song, 'json', ['groups' => 'getSongs']);
-
-        return new JsonResponse($jsonSongList, Response::HTTP_CREATED, [], true);
+        $artist = $artistRepository->findOneBy(['User_idUser' => $this->getUser()->getId()]);
+        if($artist) {
+            $song = new Song();
+            $song->setIdSong($generateId->randId())
+                ->setTitle($request->get('title'))
+                ->setUrl($request->get('url'))
+                ->setCover($request->get('cover'))
+                ->setVisibility($request->get('visibility'))
+                ->addArtistIdUser($artist)
+                ->setAlbum($albumRepository->find($request->get('idalbum')))
+                ->setPlaylistHasSong($playlistHasSongRepository->find($request->get('idplaylisthassong')));
+            $this->entityManager->persist($song);
+            $this->entityManager->flush();
+            $jsonSongList = $this->serializer->serialize($song, 'json', ['groups' => 'getSongs']);
+            return new JsonResponse($jsonSongList, Response::HTTP_CREATED, [], true);
+        }
+        
+        return new JsonResponse(['message'=>'Error'] , Response::HTTP_NOT_FOUND, [], true);
+        
     }
 
     #[Route('/song/{id}', name: 'app_update_song', methods: ['PUT'])]
