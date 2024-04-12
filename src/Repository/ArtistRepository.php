@@ -61,12 +61,12 @@ class ArtistRepository extends ServiceEntityRepository
                     album al ON a.id = al.artist_user_id_user_id";
 
         if($checkvisibility) {
-            $sql .= "AND al.visibility =  $checkvisibility";
+            $sql .= " AND al.visibility =  $checkvisibility";
         }
         $sql .= " LEFT JOIN song s ON al.id = s.album_id"   ;
 
         if($checkvisibility) {
-            $sql .= "AND al.visibility =  $checkvisibility";
+            $sql .= " AND al.visibility =  $checkvisibility";
         }
         $sql .= "
                 LEFT JOIN 
@@ -181,12 +181,12 @@ class ArtistRepository extends ServiceEntityRepository
                     album al ON a.id = al.artist_user_id_user_id";
 
         if($checkvisibility) {
-            $sql .= "AND al.visibility =  $checkvisibility";
+            $sql .= " AND al.visibility =  $checkvisibility";
         }
         $sql .= " LEFT JOIN song s ON al.id = s.album_id"   ;
 
         if($checkvisibility) {
-            $sql .= "AND al.visibility =  $checkvisibility";
+            $sql .= " AND al.visibility =  $checkvisibility";
         }
         $sql .= "
                 LEFT JOIN 
