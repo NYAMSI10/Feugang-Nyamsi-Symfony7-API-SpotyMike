@@ -22,14 +22,14 @@ class ArtistRepository extends ServiceEntityRepository
     }
 
 
-    public function findAllWithPagination($checkvisibility,$page, $limit) 
+    public function findAllWithPagination($checkvisibility, $page, $limit)
     {
 
         $qb = $this->createQueryBuilder('a')
-                ->select('COUNT(DISTINCT a.id) as totalArtists');
-        if($checkvisibility) {
+            ->select('COUNT(DISTINCT a.id) as totalArtists');
+        if ($checkvisibility) {
             $qb->andWhere('a.active = :active')
-            ->setParameter('active', true);
+                ->setParameter('active', true);
         }
 
         $totalArtists = $qb->getQuery()->getSingleScalarResult();
@@ -61,12 +61,12 @@ class ArtistRepository extends ServiceEntityRepository
                 LEFT JOIN 
                     album al ON a.id = al.artist_user_id_user_id";
 
-        if($checkvisibility) {
+        if ($checkvisibility) {
             $sql .= " AND al.visibility =  $checkvisibility";
         }
-        $sql .= " LEFT JOIN song s ON al.id = s.album_id"   ;
+        $sql .= " LEFT JOIN song s ON al.id = s.album_id";
 
-        if($checkvisibility) {
+        if ($checkvisibility) {
             $sql .= " AND al.visibility =  $checkvisibility";
         }
         $sql .= "
@@ -76,17 +76,17 @@ class ArtistRepository extends ServiceEntityRepository
                     label l ON l.id = ahl.id_label_id
                     AND al.created_at BETWEEN ahl.entrydate AND ahl.issuedate
                 WHERE ";
-        if($checkvisibility) {
+        if ($checkvisibility) {
             $sql .= "a.active = $checkvisibility AND";
         }
-        $sql .="
+        $sql .= "
                      (al.id IS NULL OR l.id IS NOT NULL)
                 GROUP BY
                     al.id
                 ORDER BY 
                     a.id, al.id";
         $results = $this->getEntityManager()->getConnection()->executeQuery($sql, [])->fetchAll();
-        
+
         $artists = [];
         foreach ($results as $result) {
             $artistKey = $result['firstname'] . ' ' . $result['lastname'];
@@ -97,14 +97,14 @@ class ArtistRepository extends ServiceEntityRepository
                     'lastname' => $result['lastname'],
                     'sexe' => $result['sexe'],
                     'dateBirth' => $result['dateBirth']/*->format('d-m-Y')*/,
-                    'Artist.createdAt' =>$result['artist_createdAt']/*->format('d-m-Y')*/,
+                    'Artist.createdAt' => $result['artist_createdAt']/*->format('d-m-Y')*/,
                     'albums' => [],
-                    
+
                 ];
             }
 
             if ($result['idAlbum'] !== null) {
-                
+
                 if (!isset($artists[$artistKey]['albums'][$result['idAlbum']])) {
                     $artists[$artistKey]['albums'][$result['idAlbum']] = [
                         'id' => $result['idAlbum'],
@@ -121,7 +121,7 @@ class ArtistRepository extends ServiceEntityRepository
                 $songIds = explode(',', $result['song_ids']);
                 $songTitles = explode(',', $result['song_titles']);
                 $songCovers = explode(',', $result['song_covers']);
-                $songcreates = explode(',',$result['song_created_ats']);
+                $songcreates = explode(',', $result['song_created_ats']);
 
                 $numSongs = count($songIds);
                 for ($i = 0; $i < $numSongs; $i++) {
@@ -132,14 +132,13 @@ class ArtistRepository extends ServiceEntityRepository
                         'createdAt' => $songcreates[$i]
                     ];
                 }
-                    
-            }     
+            }
         }
 
-        $limit=1;
+        $limit = 1;
         $offset = ($page - 1) * $limit;
         $returnArtist = array_slice($artists, $offset, $limit);
-       
+
         $totalPages = ceil($totalArtists / $limit);
         $currentPage = $page;
 
@@ -153,7 +152,7 @@ class ArtistRepository extends ServiceEntityRepository
         );
     }
 
-    public function findByArtistAndAlbumAndSong ($artist_fullname, $checkvisibility)
+    public function findByArtistAndAlbumAndSong($artist_fullname, $checkvisibility)
     {
         $sql = "SELECT
                     u.firstname AS firstname,
@@ -183,12 +182,12 @@ class ArtistRepository extends ServiceEntityRepository
                 LEFT JOIN 
                     album al ON a.id = al.artist_user_id_user_id";
 
-        if($checkvisibility) {
+        if ($checkvisibility) {
             $sql .= " AND al.visibility =  $checkvisibility";
         }
-        $sql .= " LEFT JOIN song s ON al.id = s.album_id"   ;
+        $sql .= " LEFT JOIN song s ON al.id = s.album_id";
 
-        if($checkvisibility) {
+        if ($checkvisibility) {
             $sql .= " AND al.visibility =  $checkvisibility";
         }
         $sql .= "
@@ -198,18 +197,18 @@ class ArtistRepository extends ServiceEntityRepository
                     label l ON l.id = ahl.id_label_id
                     AND al.created_at BETWEEN ahl.entrydate AND ahl.issuedate
                 WHERE ";
-        if($checkvisibility) {
+        if ($checkvisibility) {
             $sql .= "a.active = $checkvisibility AND";
         }
-        $sql .="
-                    a.fullname = '".$artist_fullname."'
+        $sql .= "
+                    a.fullname = '" . $artist_fullname . "'
                     AND (al.id IS NULL OR l.id IS NOT NULL)
                 GROUP BY
                     al.id
                 ORDER BY 
                     a.id, al.id";
 
-       
+
         $results = $this->getEntityManager()->getConnection()->executeQuery($sql, [])->fetchAll();
         $artist = [];
 
@@ -222,15 +221,15 @@ class ArtistRepository extends ServiceEntityRepository
                     'lastname' => $result['lastname'],
                     'sexe' => $result['sexe'],
                     'dateBirth' => $result['dateBirth']/*->format('d-m-Y')*/,
-                    'Artist.createdAt' =>$result['artist_createdAt']/*->format('d-m-Y')*/,
+                    'Artist.createdAt' => $result['artist_createdAt']/*->format('d-m-Y')*/,
                     'year' => $result['album_year'],
                     'albums' => [],
-                    
+
                 ];
             }
 
             if ($result['idAlbum'] !== null) {
-                
+
                 if (!isset($artist[$artistKey]['albums'][$result['idAlbum']])) {
                     $artist[$artistKey]['albums'][$result['idAlbum']] = [
                         'id' => $result['idAlbum'],
@@ -246,7 +245,7 @@ class ArtistRepository extends ServiceEntityRepository
                 $songIds = explode(',', $result['song_ids']);
                 $songTitles = explode(',', $result['song_titles']);
                 $songCovers = explode(',', $result['song_covers']);
-                $songcreates = explode(',',$result['song_created_ats']);
+                $songcreates = explode(',', $result['song_created_ats']);
 
                 $numSongs = count($songIds);
                 for ($i = 0; $i < $numSongs; $i++) {
@@ -257,16 +256,12 @@ class ArtistRepository extends ServiceEntityRepository
                         'createdAt' => $songcreates[$i]
                     ];
                 }
-                    
-            }     
+            }
         }
-        
-        if($artist)
+
+        if ($artist)
             return array_values($artist)[0];
         else
             return null;
     }
-
-
-    
 }
