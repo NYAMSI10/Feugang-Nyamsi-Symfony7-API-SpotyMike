@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\User;
+use App\Repository\ArtistRepository;
 use App\Service\GenerateId;
 use Countable;
 use DateTime;
@@ -107,8 +108,10 @@ class UserController extends AbstractController
         $formats = 'd/m/Y';
         $date = \DateTime::createFromFormat($formats, $dateBirth);
         $today = new \DateTime();
-        $birthdate = new \DateTime($dateBirth);
-        $age = $today->diff($birthdate)->y;
+        // dd($dateBirth);
+        //$birthdate = new \DateTime($dateBirth);
+
+        $age = $today->diff($date)->y;
 
 
         $password_pattern = '/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?!.* )(?=.*[^a-zA-Z0-9]).{8,20}$/';
@@ -140,8 +143,8 @@ class UserController extends AbstractController
                 'message' => "le format de l'email est invalide",
             ], Response::HTTP_BAD_REQUEST);
         }
-       
-        if (intval($sexe) != 0 && intval($sexe) != 1 && $sexe) {
+
+        if ($sexe != 0 && $sexe != 1 && $sexe) {
             return $this->json([
                 'error' => true,
                 'message' => "La valeur du champ sexe est invalide, les valeurs autorisées sont 0 pour Femme, 1 pour Homme.",
@@ -178,10 +181,10 @@ class UserController extends AbstractController
             $user->setLastname($lastname);
             $user->setEmail($email);
             $user->setTel($request->get('tel'));
-            if($sexe) {
-                $user->setSexe(($sexe == 0)?'Femme':'Homme');
+            if ($sexe != 0 || $sexe != 1) {
+                $user->setSexe(($sexe == 0) ? 'Femme' : 'Homme');
             }
-            
+
             $user->setDateBirth($date);
             $user->setRoles(["ROLE_USER"]);
 
@@ -257,7 +260,7 @@ class UserController extends AbstractController
             ], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
-        if ((($sexe != 0) && ($sexe != 1)) && $sexe) {
+        if ($sexe != 0 && $sexe != 1 && $sexe) {
             return $this->json([
                 'error' => true,
                 'message' => "La valeur du champ sexe est invalide, les valeurs autorisées sont 0 pour Femme, 1 pour Homme.",
@@ -267,8 +270,8 @@ class UserController extends AbstractController
             $user->setFirstname($firstname);
             $user->setLastname($lastname);
             $user->setTel($request->get('tel'));
-            if($sexe) {
-                $user->setSexe(($sexe == 0)?'Femme':'Homme');
+            if ($sexe != 0 || $sexe != 1) {
+                $user->setSexe(($sexe == 0) ? "Femme" : "Homme");
             }
             $this->entityManager->persist($user);
             $this->entityManager->flush();
@@ -287,10 +290,14 @@ class UserController extends AbstractController
     }
 
     #[Route('/account-desactivation', name: 'user_delete', methods: ['DELETE'])]
-    public function delete(Request $request): JsonResponse
+    public function delete(Request $request, ArtistRepository $artistRepository): JsonResponse
     {
         $user = $this->repository->findOneBy(['email' => $this->getUser()->getUserIdentifier()]);
-
+        $artistInfo = $artistRepository->find($user->getArtist()->getId());
+        if ($user->getRoles()[0] == "ROLE_ARTISTE") {
+            $this->entityManager->remove($artistInfo);
+            $this->entityManager->flush();
+        }
         if (!$user->isActive()) {
             return $this->json([
                 'error' => true,
@@ -300,7 +307,6 @@ class UserController extends AbstractController
         $user->setActive(false);
         $this->entityManager->persist($user);
         $this->entityManager->flush();
-
         return $this->json([
             'error' => false,
             'message' => 'Votre compte a été désactivé avec succès.Nous sommes désolés de vous voir partir',

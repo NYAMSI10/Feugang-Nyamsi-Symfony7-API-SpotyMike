@@ -64,7 +64,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     #[ORM\Column(type: Types::DATE_MUTABLE)]
     #[Groups(["getUsers", "getLogin", "getArtist"])]
-    #[Context([DateTimeNormalizer::FORMAT_KEY => ' d/m/Y'])]
+    #[Context([DateTimeNormalizer::FORMAT_KEY => ' d-m-Y'])]
     private ?\DateTimeInterface $dateBirth = null;
 
     #[ORM\Column(length: 30, nullable: true)]
