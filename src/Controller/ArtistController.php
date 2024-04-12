@@ -306,11 +306,10 @@ class ArtistController extends AbstractController
 
 
     #[Route('/artist', name: 'artist_delete', methods: ['DELETE'])]
-    public function delete(Request $request): JsonResponse
+    public function delete(): JsonResponse
     {
-        
         $artist = $this->repository->findOneBy(['User_idUser' => $this->getUser()->getId()]);
-        
+
         if (!$artist) {
             $data = $this->serializer->serialize(
                 ['error' => true, 'message' => "Compte artiste non trouvé. Vérifiez les informations fournies et réessayez"],
