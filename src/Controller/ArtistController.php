@@ -125,13 +125,14 @@ class ArtistController extends AbstractController
     public function new(Request $request): JsonResponse
     {
         $user = $this->entityManager->getRepository(User::class)->findOneBy(['email' => $this->getUser()->getUserIdentifier()]);
-        $fullname = $request->request->get('fullname');
-        $id_label = intval($request->get('label'));
+        $fullname = $request->get('fullname');
+        $id_label = $request->get('label');
         $description = $request->get('description');
 
         if (!in_array('ROLE_ARTIST', $user->getRoles(), true)) {
 
-            if (!isset($fullname) || !isset($id_label)) {
+
+            if ((!$fullname) || (!$id_label)) {
                 $data = $this->serializer->serialize(
                     ['error' => true, 'message' => "L'id du label et le fullname sont obligatoires"],
                     'json'
@@ -139,8 +140,7 @@ class ArtistController extends AbstractController
 
                 return new JsonResponse($data, Response::HTTP_BAD_REQUEST, [], true);
             }
-
-            if (intval($id_label) != 0) {
+            if (!filter_var($id_label, FILTER_VALIDATE_INT)) {
                 $data = $this->serializer->serialize(
                     ['error' => true, 'message' => "Le format de l'id du label est invalide"],
                     'json'
@@ -156,7 +156,7 @@ class ArtistController extends AbstractController
 
             if ($age < 16) {
                 $data = $this->serializer->serialize(
-                    ['error' => true, 'message' => "L'age de l'utilisateur ne permet pas(16 ans)"],
+                    ['error' => true, 'message' => "Vous devez avoir au moins 16 ans pour etre artiste"],
                     'json'
                 );
 
@@ -249,7 +249,7 @@ class ArtistController extends AbstractController
                     return new JsonResponse($data, Response::HTTP_FORBIDDEN, [], true);
                 }
             }
-            if ($fullname) {
+            if ($fullname && $fullname != $artist->getFullname()) {
                 $searchArtist = $this->repository->findOneBy(['fullname' => $fullname]);
                 if ($searchArtist) {
                     $data = $this->serializer->serialize(
@@ -301,10 +301,6 @@ class ArtistController extends AbstractController
         }
     }
 
-
-
-
-
     #[Route('/artist', name: 'artist_delete', methods: ['DELETE'])]
     public function delete(): JsonResponse
     {
@@ -318,7 +314,7 @@ class ArtistController extends AbstractController
 
             return new JsonResponse($data, Response::HTTP_NOT_FOUND, [], true);
         }
-        if ($artist->isActive()) {
+        if (!$artist->isActive()) {
             $data = $this->serializer->serialize(
                 ['error' => true, 'message' => "Ce compte artiste est déjà désactivé "],
                 'json'
@@ -326,7 +322,7 @@ class ArtistController extends AbstractController
 
             return new JsonResponse($data, Response::HTTP_GONE, [], true);
         }
-        $artist->setActive(true);
+        $artist->setActive(false);
         $this->entityManager->persist($artist);
         $this->entityManager->flush();
         $data = $this->serializer->serialize(
