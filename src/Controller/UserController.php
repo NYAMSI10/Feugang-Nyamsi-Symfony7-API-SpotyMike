@@ -294,10 +294,7 @@ class UserController extends AbstractController
     {
         $user = $this->repository->findOneBy(['email' => $this->getUser()->getUserIdentifier()]);
         $artistInfo = $artistRepository->find($user->getArtist()->getId());
-        if ($user->getRoles()[0] == "ROLE_ARTISTE") {
-            $this->entityManager->remove($artistInfo);
-            $this->entityManager->flush();
-        }
+
         if (!$user->isActive()) {
             return $this->json([
                 'error' => true,
@@ -306,7 +303,13 @@ class UserController extends AbstractController
         }
         $user->setActive(false);
         $this->entityManager->persist($user);
+
+
+        if (in_array('ROLE_ARTIST', $user->getRoles(), true)) {
+            $this->entityManager->remove($artistInfo);
+        }
         $this->entityManager->flush();
+
         return $this->json([
             'error' => false,
             'message' => 'Votre compte a été désactivé avec succès.Nous sommes désolés de vous voir partir',
