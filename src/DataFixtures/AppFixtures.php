@@ -70,37 +70,5 @@ class AppFixtures extends Fixture
         $artist->setUserIdUser($userArtist);
         $artist->setFullname($userArtist->getFirstname() . ' ' . $userArtist->getLastname());
         $manager->persist($artist);
-
-        //Création d'un artisthaslabel
-        $artisthaslabel = new ArtistHasLabel();
-        $artisthaslabel->setIdArtist($artist);
-        $artisthaslabel->setIdLabel($manager->getRepository(Label::class)->find(1));
-        $manager->persist($artisthaslabel);
-
-
-        // Création des albums.
-        for ($i = 0; $i < 3; $i++) {
-            // Création de l'auteur lui-même.
-            $album = new Album();
-            $album->setIdAlbum("Album_" . rand(0, 999));
-            $album->setNom("Héritage" . $i);
-            $album->setCateg("Zouk " . $i);
-            $album->setCover("test" . $i);
-            $album->setYear(date('Y'));
-            $album->setArtistUserIdUser($artist);
-            $manager->persist($album);
-
-            //Création des songs
-            $song = new Song();
-            $song->setIdSong("Song_" . rand(0, 999));
-            $song->setTitle("Makila" . $i);
-            $song->setUrl("Zouk " . $i);
-            $song->setCover("test" . $i);
-            $song->addArtistIdUser($artist);
-            $song->setAlbum($album);
-            $manager->persist($song);
-        }
-        
-        $manager->flush();
     }
 }
