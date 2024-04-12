@@ -319,7 +319,7 @@ class ArtistController extends AbstractController
 
             return new JsonResponse($data, Response::HTTP_NOT_FOUND, [], true);
         }
-        if ($artist->isActive()) {
+        if (!$artist->isActive()) {
             $data = $this->serializer->serialize(
                 ['error' => true, 'message' => "Ce compte artiste est déjà désactivé "],
                 'json'
@@ -327,7 +327,7 @@ class ArtistController extends AbstractController
 
             return new JsonResponse($data, Response::HTTP_GONE, [], true);
         }
-        $artist->setActive(true);
+        $artist->setActive(false);
         $this->entityManager->persist($artist);
         $this->entityManager->flush();
         $data = $this->serializer->serialize(
