@@ -108,7 +108,7 @@ class UserController extends AbstractController
         $formats = 'd/m/Y';
         $date = \DateTime::createFromFormat($formats, $dateBirth);
         $today = new \DateTime();
-        
+
         $password_pattern = '/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?!.* )(?=.*[^a-zA-Z0-9]).{8,20}$/';
         $phone_pattern = '/^(?:\+33|0)[0-9]{9}$/';
 
@@ -303,7 +303,20 @@ class UserController extends AbstractController
 
 
         if (in_array('ROLE_ARTIST', $user->getRoles(), true)) {
-            $this->entityManager->remove($artistInfo);
+            $artistInfo->setActive(false);
+            $this->entityManager->persist($artistInfo);
+            $albums = $artistInfo->getAlbums();
+            foreach($albums as $album) {
+                $album->setVisibility(false);
+                $this->entityManager->persist($album);
+                $songs = $album->getSongs();
+                foreach($songs as $song) {
+                    $song->setVisibility(false);
+                    $this->entityManager->persist($song);
+                }
+            }
+            
+            //$this->entityManager->remove($artistInfo);
         }
         $this->entityManager->flush();
 
