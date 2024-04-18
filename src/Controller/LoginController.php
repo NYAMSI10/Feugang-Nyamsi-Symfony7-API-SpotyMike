@@ -147,7 +147,6 @@ class LoginController extends AbstractController
         $email = $request->get('email');
         $encodedEmail = urlencode($email);
 
-        $user = $this->repository->findOneBy(['email' => $email]);
 
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             return $this->json([
@@ -162,6 +161,9 @@ class LoginController extends AbstractController
                 'message' => "Email manquant. Veuillez fournir votre email pour la récupération du mot de passe ",
             ], Response::HTTP_BAD_REQUEST);
         }
+        
+        $user = $this->repository->findOneBy(['email' => $email]);
+
         if (!$user) {
             return $this->json([
                 'error' => true,
@@ -209,7 +211,7 @@ class LoginController extends AbstractController
         }
     }
 
-    #[Route('/reset-password/{token}', name: 'app_reset_password', methods: 'POST')]
+    #[Route('/reset-password/{token?}', name: 'app_reset_password', methods: 'POST')]
     public function resetPassword(Request $request): JsonResponse
     {
 
