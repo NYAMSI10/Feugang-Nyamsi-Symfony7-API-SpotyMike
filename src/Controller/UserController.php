@@ -108,12 +108,7 @@ class UserController extends AbstractController
         $formats = 'd/m/Y';
         $date = \DateTime::createFromFormat($formats, $dateBirth);
         $today = new \DateTime();
-        // dd($dateBirth);
-        //$birthdate = new \DateTime($dateBirth);
-
-        $age = $today->diff($date)->y;
-
-
+        
         $password_pattern = '/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?!.* )(?=.*[^a-zA-Z0-9]).{8,20}$/';
         $phone_pattern = '/^(?:\+33|0)[0-9]{9}$/';
 
@@ -157,6 +152,8 @@ class UserController extends AbstractController
                 'message' => "le format de la date de naissance est invalide. Le format atttendu est JJ/MM/AAAA ",
             ], Response::HTTP_BAD_REQUEST);
         }
+
+        $age = $today->diff($date)->y;
         if ($age < 12) {
             $data = $this->serializer->serialize(
                 ['error' => true, 'message' => "L'utilisateur doit avoir au moins 12 ans"],
