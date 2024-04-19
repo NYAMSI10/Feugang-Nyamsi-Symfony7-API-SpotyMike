@@ -66,6 +66,9 @@ class Album
     #[ORM\Column]
     private ?bool $visibility = true;
 
+    #[ORM\Column]
+    private ?bool $active = true;
+
     public function __construct()
     {
         $this->songs = new ArrayCollection();
@@ -200,6 +203,18 @@ class Album
     public function setVisibility(bool $visibility): static
     {
         $this->visibility = $visibility;
+
+        return $this;
+    }
+
+    public function isActive(): ?bool
+    {
+        return $this->active;
+    }
+
+    public function setActive(bool $active): static
+    {
+        $this->active = $active;
 
         return $this;
     }
