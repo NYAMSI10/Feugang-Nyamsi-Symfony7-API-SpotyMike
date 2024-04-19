@@ -34,14 +34,6 @@ class Artist
     #[Assert\Regex(pattern: '/^[a-zA-Z0-9]*$/', message: 'Fullname')]
     #[Groups(["getLogin"])]
     private ?string $fullname = null;
-
-
-    // #[ORM\Column(length: 90)]
-    // #[Assert\NotBlank(message: 'label')]
-    // #[Assert\NotNull(message: 'label')]
-    // private ?string $label = null;
-
-
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     #[Groups(["getLogin"])]
     private ?string $description = null;
@@ -65,6 +57,7 @@ class Artist
     private Collection $users;
 
     #[ORM\OneToMany(targetEntity: ArtistHasLabel::class, mappedBy: 'idArtist')]
+
     private Collection $artistHasLabels;
 
     #[ORM\Column]

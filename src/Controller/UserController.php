@@ -108,24 +108,26 @@ class UserController extends AbstractController
         $formats = 'd/m/Y';
         $date = \DateTime::createFromFormat($formats, $dateBirth);
         $today = new \DateTime();
-        // dd($dateBirth);
-        //$birthdate = new \DateTime($dateBirth);
-
-        $age = $today->diff($date)->y;
-
 
         $password_pattern = '/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?!.* )(?=.*[^a-zA-Z0-9]).{8,20}$/';
-        $phone_pattern = '/^(?:\+33|0)[0-9]{9}$/';
+        $phone_pattern = '/^(?:\+33|0)[0-9]{10}$/';
 
         if (!$firstname || !$lastname || !$email || !$password || !$dateBirth) {
             return $this->json([
                 'error' => true,
-                'message' => 'Des champs obligatoires sont manquantes',
+                'message' => 'Des champs obligatoires sont manquants.',
             ], Response::HTTP_BAD_REQUEST);
         }
+        if (strlen($firstname) > 60 || strlen($lastname) > 60) {
+            return $this->json([
+                'error' => true,
+                'message' => 'Erreur de validation des données.',
+            ], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
         if (!preg_match($password_pattern, $password)) {
             $data = $this->serializer->serialize(
-                ['error' => true, 'message' => "Le mot de passe doit contenir au moins une majuscule, une minuscule,un chiffre, un caractère spécial et avoir 8 caractères minimum"],
+                ['error' => true, 'message' => "Le mot de passe doit contenir au moins une majuscule, une minuscule,un chiffre, un caractère spécial et avoir 8 caractères minimum."],
                 'json'
             );
 
@@ -134,13 +136,13 @@ class UserController extends AbstractController
         if (!preg_match($phone_pattern, $request->get('tel')) && $request->get('tel')) {
             return $this->json([
                 'error' => true,
-                'message' => "Le format du numéro de téléphone est invalide",
+                'message' => "Le format du numéro de téléphone est invalide.",
             ], Response::HTTP_BAD_REQUEST);
         }
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             return $this->json([
                 'error' => true,
-                'message' => "le format de l'email est invalide",
+                'message' => "le format de l'email est invalide.",
             ], Response::HTTP_BAD_REQUEST);
         }
 
@@ -154,22 +156,24 @@ class UserController extends AbstractController
         if (!$date) {
             return $this->json([
                 'error' => true,
-                'message' => "le format de la date de naissance est invalide. Le format atttendu est JJ/MM/AAAA ",
+                'message' => "le format de la date de naissance est invalide. Le format atttendu est JJ/MM/AAAA.",
             ], Response::HTTP_BAD_REQUEST);
         }
+        $age = $today->diff($date)->y;
+
         if ($age < 12) {
             $data = $this->serializer->serialize(
-                ['error' => true, 'message' => "L'utilisateur doit avoir au moins 12 ans"],
+                ['error' => true, 'message' => "L'utilisateur doit avoir au moins 12 ans."],
                 'json'
             );
 
-            return new JsonResponse($data, Response::HTTP_NOT_ACCEPTABLE, [], true);
+            return new JsonResponse($data, Response::HTTP_BAD_REQUEST, [], true);
         }
 
         $search = $this->repository->findOneBy(['email' => $request->get('email')]);
         if ($search) {
             $data = $this->serializer->serialize(
-                ['error' => true, 'message' => "Cet email est déjà utilisé par un autre compte"],
+                ['error' => true, 'message' => "Cet email est déjà utilisé par un autre compte."],
                 'json'
             );
 
@@ -198,7 +202,7 @@ class UserController extends AbstractController
             $this->entityManager->flush();
 
             $data = $this->serializer->serialize(
-                ['error' => false, 'message' => "L'utilisateur a bien été créé avec succès", 'user' =>   $user],
+                ['error' => false, 'message' => "L'utilisateur a bien été créé avec succès.", 'user' =>   $user],
                 'json',
                 [
                     'groups' => 'getUsers'
@@ -208,7 +212,7 @@ class UserController extends AbstractController
             return new JsonResponse($data, Response::HTTP_CREATED, [], true);
         } catch (\Exception $e) {
             $data = $this->serializer->serialize(
-                ['error' => true, 'message' => "Un souci serveur, veuillez réessayer plus tard", "erreur" => $e->getMessage()],
+                ['error' => true, 'message' => "Un souci serveur, veuillez réessayer plus tard.", "erreur" => $e->getMessage()],
                 'json'
             );
 
@@ -226,13 +230,22 @@ class UserController extends AbstractController
         $firstname = $request->get('firstname');
         $lastname = $request->get('lastname');
         $sexe = $request->get('sexe');
-        $phone_pattern = '/^(?:\+33|0)[0-9]{9}$/';
-        $word_pattern = '/^[A-Za-z]+$/';
+        $phone_pattern = '/^(?:\+33|0)[0-9]{10}$/';
+        $word_pattern = '/^[A-Z a-z]+$/';
 
-        if ((!preg_match($word_pattern, $firstname) || (!preg_match($word_pattern, $lastname))) && ($firstname  ||  $lastname)) {
+        $keys = $request->request->keys();
+        $array = ["firstname", "lastname", "sexe", "tel"];
+        $differences = array_diff($keys, $array);
+        if (!empty($differences)) {
             return $this->json([
                 'error' => true,
-                'message' => "Les données fournies sont invalides ou incomplètes  ",
+                'message' => "Les données fournies sont invalides ou incomplètes.",
+            ], Response::HTTP_BAD_REQUEST);
+        }
+        if (!$firstname && !$lastname && !$sexe  && !$request->get('tel')) {
+            return $this->json([
+                'error' => true,
+                'message' => "Les données fournies sont invalides ou incomplètes.",
             ], Response::HTTP_BAD_REQUEST);
         }
 
@@ -241,23 +254,29 @@ class UserController extends AbstractController
             if ($this->repository->findOneBy(['tel' => $request->get('tel')])) {
                 return $this->json([
                     'error' => true,
-                    'message' => "Conflit de donnée. le numéro de téléphone est déjà utilisé par un autre utilisateur",
+                    'message' => "Conflit de donnée. le numéro de téléphone est déjà utilisé par un autre utilisateur.",
                 ], Response::HTTP_CONFLICT);
             }
 
             if (!preg_match($phone_pattern, $request->get('tel')) && $request->get('tel')) {
                 return $this->json([
                     'error' => true,
-                    'message' => "Le format du numéro de téléphone est invalide",
+                    'message' => "Le format du numéro de téléphone est invalide.",
                 ], Response::HTTP_BAD_REQUEST);
             }
         }
 
-        if ((strlen($firstname) < 4 || strlen($lastname) < 4) && ($firstname || $lastname)) {
+        if ((strlen($firstname) > 60 || strlen($lastname) > 60) && ($firstname || $lastname)) {
             return $this->json([
                 'error' => true,
-                'message' => "Erreur de validation des données ",
+                'message' => "Erreur de validation des données.",
             ], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+        if ((!preg_match($word_pattern, $firstname) || (!preg_match($word_pattern, $lastname))) && ($firstname  ||  $lastname)) {
+            return $this->json([
+                'error' => true,
+                'message' => "Les données fournies sont invalides ou incomplètes  ",
+            ], Response::HTTP_BAD_REQUEST);
         }
 
         if ($sexe != 0 && $sexe != 1 && $sexe) {
@@ -267,9 +286,9 @@ class UserController extends AbstractController
             ], Response::HTTP_BAD_REQUEST);
         }
         try {
-            $user->setFirstname($firstname);
-            $user->setLastname($lastname);
-            $user->setTel($request->get('tel'));
+            if ($firstname) $user->setFirstname($firstname);
+            if ($lastname) $user->setLastname($lastname);
+            if ($request->get('tel')) $user->setTel($request->get('tel'));
             if ($sexe != 0 || $sexe != 1) {
                 $user->setSexe(($sexe == 0) ? "Femme" : "Homme");
             }
@@ -277,11 +296,11 @@ class UserController extends AbstractController
             $this->entityManager->flush();
             return $this->json([
                 'error' => false,
-                'message' => 'Votre inscription a bien été prise en compte',
+                'message' => 'Votre inscription a bien été prise en compte.',
             ], Response::HTTP_OK);
         } catch (\Exception $e) {
             $data = $this->serializer->serialize(
-                ['error' => true, 'message' => "Un souci serveur, veuillez réessayer plus tard", "erreur" => $e->getMessage()],
+                ['error' => true, 'message' => "Un souci serveur, veuillez réessayer plus tard.", "erreur" => $e->getMessage()],
                 'json'
             );
 

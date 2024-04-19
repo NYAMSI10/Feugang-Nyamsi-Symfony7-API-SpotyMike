@@ -21,28 +21,31 @@ class AlbumRepository extends ServiceEntityRepository
         parent::__construct($registry, Album::class);
     }
 
-    //    /**
-    //     * @return Album[] Returns an array of Album objects
-    //     */
-    //    public function findByExampleField($value): array
-    //    {
-    //        return $this->createQueryBuilder('a')
-    //            ->andWhere('a.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->orderBy('a.id', 'ASC')
-    //            ->setMaxResults(10)
-    //            ->getQuery()
-    //            ->getResult()
-    //        ;
-    //    }
+    public function searchAlbums($year, $albumName, $artistName)
+    {
+        $qb = $this->createQueryBuilder('a')
+            ->leftJoin('a.artist_User_idUser', 'artist')
+            ->leftJoin('artist.User_idUser', 'artist_user');
 
-    //    public function findOneBySomeField($value): ?Album
-    //    {
-    //        return $this->createQueryBuilder('a')
-    //            ->andWhere('a.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->getQuery()
-    //            ->getOneOrNullResult()
-    //        ;
-    //    }
+        if ($year !== null) {
+            $qb->andWhere('a.year = :year')
+                ->setParameter('year', $year);
+        }
+
+        if ($albumName !== null) {
+            $qb->andWhere('a.nom LIKE :albumName')
+                ->setParameter('albumName', '%' . $albumName . '%');
+        }
+
+        if ($artistName !== null) {
+            $qb->andWhere($qb->expr()->orX(
+                $qb->expr()->like('artist_user.fullname', ':artistName'),
+                $qb->expr()->like('artist_user.firstname', ':artistName'),
+                $qb->expr()->like('artist_user.lastname', ':artistName')
+            ))
+                ->setParameter('artistName', '%' . $artistName . '%');
+        }
+
+        return $qb->getQuery()->getResult();
+    }
 }

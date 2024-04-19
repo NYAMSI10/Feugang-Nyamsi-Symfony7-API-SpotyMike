@@ -43,7 +43,7 @@ class LoginController extends AbstractController
 
         $encodedEmail = urlencode($email);
 
-        if (!isset($email) || !isset($password)) {
+        if (!$email || !$password) {
             $data = $this->serializer->serialize(
                 ['error' => true, 'message' => "Email/password manquants"],
                 'json'

@@ -32,7 +32,7 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[Assert\NotBlank(message: 'firstname')]
     #[Assert\NotNull(message: 'firstname')]
     #[Assert\Length(max: 55, maxMessage: 'firstname')]
-    #[Groups(["getUsers", "getLogin", "getArtist"])]
+    #[Groups(["getUsers", "getLogin", "getArtist", "getAlbums"])]
     private ?string $firstname = null;
 
     #[ORM\Column(length: 80, unique: true)]
@@ -58,17 +58,17 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     private ?Artist $artist = null;
 
     #[ORM\Column(length: 55)]
-    #[Groups(["getUsers", "getLogin", "getArtist"])]
+    #[Groups(["getUsers", "getLogin", "getArtist", "getAlbums"])]
     #[Assert\Length(max: 55, maxMessage: 'lastname')]
     private ?string $lastname = null;
 
     #[ORM\Column(type: Types::DATE_MUTABLE)]
-    #[Groups(["getUsers", "getLogin", "getArtist"])]
+    #[Groups(["getUsers", "getLogin", "getArtist", "getAlbums"])]
     #[Context([DateTimeNormalizer::FORMAT_KEY => ' d-m-Y'])]
     private ?\DateTimeInterface $dateBirth = null;
 
     #[ORM\Column(length: 30, nullable: true)]
-    #[Groups(["getUsers", "getLogin", "getArtist"])]
+    #[Groups(["getUsers", "getLogin", "getArtist", "getAlbums"])]
     #[Assert\Length(max: 30, maxMessage: 'sexe')]
     private ?string $sexe = null;
 

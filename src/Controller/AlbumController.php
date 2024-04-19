@@ -4,6 +4,8 @@ namespace App\Controller;
 
 use App\Entity\Artist;
 use App\Entity\Album;
+use App\Entity\ArtistHasLabel;
+use App\Entity\Label;
 use App\Entity\User;
 use Doctrine\ORM\EntityManager;
 use App\Repository\UserRepository;
@@ -24,6 +26,8 @@ class AlbumController extends AbstractController
     private $entityManager;
     private $repository;
     private $artistRepository;
+    private $labelRepository;
+    private $labelHasArtistRepository;
     private $serializer;
     private $validator;
 
@@ -32,6 +36,8 @@ class AlbumController extends AbstractController
         $this->entityManager = $entityManager;
         $this->repository = $entityManager->getRepository(Album::class);
         $this->artistRepository = $entityManager->getRepository(Artist::class);
+        $this->labelRepository = $entityManager->getRepository(Label::class);
+        $this->labelHasArtistRepository = $entityManager->getRepository(ArtistHasLabel::class);
         $this->serializer = $serializer;
         $this->validator = $validator;
     }
@@ -53,7 +59,7 @@ class AlbumController extends AbstractController
     public function new(Request $request, GenerateId $generateId): JsonResponse
     {
         $existAlbum = $this->repository->findOneBy(["nom" => $request->get('nom')]);
-        
+
         $artist = $this->artistRepository->findOneBy(["User_idUser" => $this->getUser()]);
         if ($existAlbum) {
             return $this->json([
@@ -89,7 +95,7 @@ class AlbumController extends AbstractController
     #[Route('album/{id}', name: 'album_show', methods: ['GET'])]
     public function show(Request $request, int $id = 0): JsonResponse
     {
-       
+
         $id = $request->get('id');
 
         if (!isset($id) || $id == 0) {
@@ -102,7 +108,7 @@ class AlbumController extends AbstractController
         }
 
         $album = $this->repository->find($id);
-       
+
         if ($album) {
             $jsonAlbumList = $this->serializer->serialize(["error" => false, "album" => $album], 'json', ['groups' => 'getAlbums']);
 
@@ -114,6 +120,82 @@ class AlbumController extends AbstractController
             );
             return new JsonResponse($data, Response::HTTP_CONFLICT, [], true);
         }
+    }
+
+    #[Route('album/{search}', name: 'album_show', methods: ['GET'])]
+    public function albumSearch(Request $request, int $id = 0): JsonResponse
+    {
+
+        $year = $request->get('year');
+        $albumName = $request->get('albumName');
+        $artistName = $request->get('artistName');
+        $albums = $this->repository->searchAlbums($year, $albumName, $artistName);
+        $response = [];
+        foreach ($albums as $album) {
+
+            $artistId = $this->artistRepository->findOneBy(['fullname' => $album->getArtistUserIdUser()->getFullname()]);
+
+            $labelHasArtists = $this->labelHasArtistRepository->findBy(['idArtist' => $artistId]);
+            foreach ($labelHasArtists as $labelHasArtist) {
+                if ($labelHasArtist->getIssuedate()) {
+                    if (($labelHasArtist->getEntrydate()->format('Y-m-d') <= $album->getCreatedAt()->format('Y-m-d'))
+                        && ($album->getCreatedAt()->format('Y-m-d') <= $labelHasArtist->getIssuedate()->format('Y-m-d'))
+                    ) {
+                        $label = $this->labelRepository->find($labelHasArtist->getIdLabel())->getNom();
+                    }
+                }
+            }
+
+            if (!$label)
+            {
+                foreach ($labelHasArtists as $labelHasArtist) {
+                    if (!$labelHasArtist->getIssuedate()) {
+                  dd('bb');
+                          //  $label = $this->labelRepository->find($labelHasArtist->getIdLabel())->getNom();
+
+                    }
+                }
+            }
+
+            $responseAlbum = [
+                'id' => $album->getId(),
+                'nom' => $album->getNom(),
+                'categ' => $album->getCateg(),
+                'labels' => $label,
+                'cover' => $album->getCover(),
+                'year' => $album->getYear(),
+                'createdAt' => $album->getCreatedAt()->format('Y-m-d'),
+                'artist' => [
+                    'firstname' => $album->getArtistUserIdUser()->getFullname(),
+                    // 'lastname' => $album->getArtistUserIdUser()->getLastname(),
+                    'songs' => []
+                ]
+            ];
+
+            foreach ($album->getSongs() as $song) {
+                $songData = [
+                    'id' => $song->getId(),
+                    'title' => $song->getTitle(),
+                    'cover' => $song->getCover(),
+                    'featuring' => []
+                ];
+
+                // Ajoutez les artistes en collaboration pour chaque chanson
+                foreach ($song->getArtistIdUser() as $collaborator) {
+                    $songData['featuring'][] = [
+                        'firstname' => $collaborator->getFullname(),
+                        //'fullname' => $collaborator->getFullname(),
+                        'createdAt' => $collaborator->getCreatedAt()->format('Y-m-d')
+                    ];
+                }
+
+                $responseAlbum['artist']['songs'][] = $songData;
+            }
+
+            $response[] = $responseAlbum;
+        }
+
+        return new JsonResponse(['albums' => $response]);
     }
 
     // #[Route('album/edit/{id}', name: 'album_edit', methods: ['POST', 'PUT'])]

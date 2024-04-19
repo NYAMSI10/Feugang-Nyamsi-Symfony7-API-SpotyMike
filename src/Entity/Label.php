@@ -6,6 +6,7 @@ use App\Repository\LabelRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: LabelRepository::class)]
 class Label
@@ -16,6 +17,7 @@ class Label
     private ?int $id = null;
 
     #[ORM\Column(length: 50)]
+    #[Groups(["getAlbums"])]
     private ?string $nom = null;
 
     #[ORM\OneToMany(targetEntity: ArtistHasLabel::class, mappedBy: 'idLabel')]
