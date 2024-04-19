@@ -41,7 +41,7 @@ class ArtistController extends AbstractController
     public function index(Request $request): JsonResponse
     {
         $page = 1;
-        $limit = 2;
+        $limit = 5;
 
         $check_visibility = 0;
         $user = $this->entityManager->getRepository(User::class)->findOneBy(['email' => $this->getUser()->getUserIdentifier()]);

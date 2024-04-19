@@ -4,6 +4,7 @@ namespace App\Repository;
 
 use App\Entity\Album;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\ORM\Tools\Pagination\Paginator;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
@@ -45,4 +46,17 @@ class AlbumRepository extends ServiceEntityRepository
     //            ->getOneOrNullResult()
     //        ;
     //    }
+
+    public function getAllAlbums($currentpage,$limit)
+    {
+        $qb = $this->createQueryBuilder('al')
+        ->orderBy('al.id', 'ASC')
+        ->distinct()
+        ->setFirstResult(($currentpage - 1) * $limit)
+        ->setMaxResults($limit);
+        /*->getQuery()
+        ->getResult();
+        dd($qb);*/
+        return new Paginator($qb);
+    }
 }
