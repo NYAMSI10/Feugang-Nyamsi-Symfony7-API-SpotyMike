@@ -2,6 +2,8 @@
 
 namespace App\Repository;
 
+use App\Entity\Album;
+use App\Entity\Artist;
 use App\Entity\ArtistHasLabel;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
@@ -45,4 +47,18 @@ class ArtistHasLabelRepository extends ServiceEntityRepository
     //            ->getOneOrNullResult()
     //        ;
     //    }
+
+    public function findLabel($artist_id,$album_created){
+        $qb = $this->createQueryBuilder('ahl')
+        ->select('label.id')
+        ->join('ahl.idLabel','label')
+        ->join('ahl.idArtist','artist')
+        ->where('artist.id = :id')
+        ->andWhere(':album_created BETWEEN ahl.entrydate AND ahl.issuedate')
+        ->setParameter('id', $artist_id)
+        ->setParameter('album_created', $album_created);
+
+        return $qb->getQuery()->getOneOrNullResult();
+
+    }
 }

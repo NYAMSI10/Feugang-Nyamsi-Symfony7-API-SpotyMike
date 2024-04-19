@@ -115,7 +115,7 @@ class UserController extends AbstractController
         if (!$firstname || !$lastname || !$email || !$password || !$dateBirth) {
             return $this->json([
                 'error' => true,
-                'message' => 'Des champs obligatoires sont manquantes',
+                'message' => 'Des champs obligatoires sont manquants.',
             ], Response::HTTP_BAD_REQUEST);
         }
         if (!preg_match($password_pattern, $password)) {
