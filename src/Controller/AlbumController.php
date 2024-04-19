@@ -42,7 +42,7 @@ class AlbumController extends AbstractController
         $this->validator = $validator;
     }
 
-    
+
     #[Route('/albums', name: 'album_list', methods: ['GET'])]
     public function index(Request $request): JsonResponse
     {
@@ -56,7 +56,7 @@ class AlbumController extends AbstractController
             ], Response::HTTP_BAD_REQUEST);
         }
 
-       
+
         $albums = $this->repository->getAllAlbums($current_page,$limit);
         $nb_items = is_countable($albums) ? count($albums) : 0;
 
@@ -78,7 +78,7 @@ class AlbumController extends AbstractController
             ]
         ], Response::HTTP_OK);
     }
-    
+
 
     #[Route('/album', name: 'album_new', methods: 'POST')]
     public function new(Request $request, GenerateId $generateId): JsonResponse
@@ -258,7 +258,7 @@ class AlbumController extends AbstractController
     // }
 
 
-    public function formatData($albums) 
+    public function formatData($albums)
     {
         $response = [];
         foreach ($albums as $album) {
@@ -286,7 +286,7 @@ class AlbumController extends AbstractController
                 'artist' => $artist,
                 'songs' => [],
             ];
- 
+
             foreach ($album->getSongs() as $song) {
                 $songData = [
                     'id' => $song->getIdSong(),
@@ -295,7 +295,7 @@ class AlbumController extends AbstractController
                     'createdAt' =>$song->getCreatedAt()->format('Y-m-d'),
                     'featuring' => []
                 ];
- 
+
                 // Ajoutez les artistes en collaboration pour chaque chanson
                 foreach ($song->getArtistIdUser() as $collaborator) {
                     $songData['featuring'][] = [
@@ -308,10 +308,10 @@ class AlbumController extends AbstractController
                         'Artist.createdAt' => $collaborator->getCreatedAt()->format('Y-m-d')
                     ];
                 }
- 
+
                 $responseAlbum['songs'][] = $songData;
             }
- 
+
             $response[] = $responseAlbum;
         }
         return $response;
