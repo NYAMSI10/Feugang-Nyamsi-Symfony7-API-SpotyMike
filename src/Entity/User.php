@@ -162,7 +162,8 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function getTel(): ?string
     {
-        return $this->tel;
+
+        return ($this->tel != null)?$this->tel:'';
     }
 
     public function setTel(?string $tel): static

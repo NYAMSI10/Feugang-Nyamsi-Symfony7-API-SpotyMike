@@ -159,8 +159,9 @@ class UserController extends AbstractController
                 'message' => "le format de la date de naissance est invalide. Le format atttendu est JJ/MM/AAAA.",
             ], Response::HTTP_BAD_REQUEST);
         }
-        $age = $today->diff($date)->y;
 
+
+        $age = $today->diff($date)->y;
         if ($age < 12) {
             $data = $this->serializer->serialize(
                 ['error' => true, 'message' => "L'utilisateur doit avoir au moins 12 ans."],
@@ -325,7 +326,20 @@ class UserController extends AbstractController
 
 
         if (in_array('ROLE_ARTIST', $user->getRoles(), true)) {
-            $this->entityManager->remove($artistInfo);
+            $artistInfo->setActive(false);
+            $this->entityManager->persist($artistInfo);
+            $albums = $artistInfo->getAlbums();
+            foreach($albums as $album) {
+                $album->setVisibility(false);
+                $this->entityManager->persist($album);
+                $songs = $album->getSongs();
+                foreach($songs as $song) {
+                    $song->setVisibility(false);
+                    $this->entityManager->persist($song);
+                }
+            }
+            
+            //$this->entityManager->remove($artistInfo);
         }
         $this->entityManager->flush();
 

@@ -42,18 +42,43 @@ class AlbumController extends AbstractController
         $this->validator = $validator;
     }
 
-    /*
-    #[Route('/album', name: 'album_list', methods: ['GET'])]
-    public function index(): JsonResponse
+    
+    #[Route('/albums', name: 'album_list', methods: ['GET'])]
+    public function index(Request $request): JsonResponse
     {
-        $albums = $this->repository->findAll();
+        $current_page = $request->get('currentPage',1);
+        $limit = $request->get('limit',5);
 
-        $data = $this->serializer->serialize($albums, 'json', [
-            AbstractNormalizer::IGNORED_ATTRIBUTES => ['id'],
-        ]);
-        return new JsonResponse($data, Response::HTTP_OK, [], true);
+        if (!(is_numeric($current_page) && $current_page >= 0 && intval($current_page) == $current_page)) {
+            return $this->json([
+                'error' => true,
+                'message' => 'Le paramètre de pagination invalide. Veuillez fournir un numéro de page valide.',
+            ], Response::HTTP_BAD_REQUEST);
+        }
+
+       
+        $albums = $this->repository->getAllAlbums($current_page,$limit);
+        $nb_items = is_countable($albums) ? count($albums) : 0;
+
+        if ($nb_items ==0) {
+            return $this->json([
+                'error' => true,
+                'message' => 'Aucun album trouvé pour la page demandée.',
+            ], Response::HTTP_NOT_FOUND);
+        }
+
+        $albums_data = $this->formatData($albums);
+        return $this->json([
+            'error' => false,
+            'albums' => $albums_data,
+            'pagination' => [
+                'current_page' => $current_page,
+                'totalAlbums' => $nb_items,
+                'totalPages' => ceil($nb_items / $limit)
+            ]
+        ], Response::HTTP_OK);
     }
-    */
+    
 
     #[Route('/album', name: 'album_new', methods: 'POST')]
     public function new(Request $request, GenerateId $generateId): JsonResponse
@@ -231,4 +256,64 @@ class AlbumController extends AbstractController
     //         'data' =>  $album->jsonSerialize()
     //     ], Response::HTTP_OK);
     // }
+
+
+    public function formatData($albums) 
+    {
+        $response = [];
+        foreach ($albums as $album) {
+            $artist = [
+                'firstname' => $album->getArtistUserIdUser()->getUserIdUser()->getFirstname(),
+                'lastname' => $album->getArtistUserIdUser()->getUserIdUser()->getLastname(),
+                'fullname' => $album->getArtistUserIdUser()->getFullname(),
+                //'avatar' => $collaborator->getFullname(),
+                'followers' => count($album->getArtistUserIdUser()->getUserIdUser()->getFollowers()),
+                'sexe' =>  $album->getArtistUserIdUser()->getUserIdUser()->getSexe(),
+                'dateBirth' => $album->getArtistUserIdUser()->getUserIdUser()->getDateBirth()->format('d-m-Y'),
+                'Artist.createdAt' => $album->getArtistUserIdUser()->getCreatedAt()->format('Y-m-d')
+            ];
+
+            $label_id = $this->entityManager->getRepository(ArtistHasLabel::class)->findLabel($album->getArtistUserIdUser()->getId(),$album->getCreatedAt());
+            $label = $this->entityManager->getRepository(Label::class)->find($label_id['id']) ;
+            $responseAlbum = [
+                'id' => $album->getId(),
+                'nom' => $album->getNom(),
+                'categ' => $album->getCateg(),
+                'cover' => $album->getCover(),
+                'year' => $album->getYear(),
+                'label' => $label->getNom(),
+                'createdAt' => $album->getCreatedAt()->format('Y-m-d'),
+                'artist' => $artist,
+                'songs' => [],
+            ];
+ 
+            foreach ($album->getSongs() as $song) {
+                $songData = [
+                    'id' => $song->getIdSong(),
+                    'title' => $song->getTitle(),
+                    'cover' => $song->getCover(),
+                    'createdAt' =>$song->getCreatedAt()->format('Y-m-d'),
+                    'featuring' => []
+                ];
+ 
+                // Ajoutez les artistes en collaboration pour chaque chanson
+                foreach ($song->getArtistIdUser() as $collaborator) {
+                    $songData['featuring'][] = [
+                        'firstname' => $collaborator->getUserIdUser()->getFirstname(),
+                        'lastname' => $collaborator->getUserIdUser()->getLastname(),
+                        'fullname' => $collaborator->getFullname(),
+                        //'avatar' => $collaborator->getFullname(),
+                        'sexe' =>  $collaborator->getUserIdUser()->getSexe(),
+                        'dateBirth' => $collaborator->getUserIdUser()->getDateBirth(),
+                        'Artist.createdAt' => $collaborator->getCreatedAt()->format('Y-m-d')
+                    ];
+                }
+ 
+                $responseAlbum['songs'][] = $songData;
+            }
+ 
+            $response[] = $responseAlbum;
+        }
+        return $response;
+    }
 }
