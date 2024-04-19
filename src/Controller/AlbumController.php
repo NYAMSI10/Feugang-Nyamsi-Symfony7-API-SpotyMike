@@ -173,8 +173,8 @@ class AlbumController extends AbstractController
         foreach ($albums as $album) {
 
             $artistId = $this->artistRepository->findOneBy(['fullname' => $album->getArtistUserIdUser()->getFullname()]);
-
             $labelHasArtists = $this->labelHasArtistRepository->findBy(['idArtist' => $artistId]);
+
             foreach ($labelHasArtists as $labelHasArtist) {
                 if ($labelHasArtist->getIssuedate()) {
                     if (($labelHasArtist->getEntrydate()->format('Y-m-d') <= $album->getCreatedAt()->format('Y-m-d'))
@@ -274,7 +274,7 @@ class AlbumController extends AbstractController
     public function formatData($albums)
     {
         $response = null;
-        //dd(is_array($albums));
+        dd($albums);
         if (is_array($albums)) {
             foreach ($albums as $album) {
                 $artist = [
@@ -330,6 +330,7 @@ class AlbumController extends AbstractController
                 $response[] = $responseAlbum;
             }
         } else {
+            dd($albums);
             $artist = [
                 'firstname' => $albums->getArtistUserIdUser()->getUserIdUser()->getFirstname(),
                 'lastname' => $albums->getArtistUserIdUser()->getUserIdUser()->getLastname(),
