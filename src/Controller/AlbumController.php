@@ -136,9 +136,9 @@ class AlbumController extends AbstractController
 
         $album_data = null;
         if (!in_array('ROLE_ARTIST', $user->getRoles(), true))
-            $album_data = $this->repository->findOneBy(['id' =>$id,'visibility' => true,'active' => true ]);
+            $album_data = $this->repository->findOneBy(['idAlbum' =>$id,'visibility' => true,'active' => true ]);
         else
-            $album_data = $this->repository->findOneBy(['id' =>$id,'active' => true ]);
+            $album_data = $this->repository->findOneBy(['idAlbum' =>$id,'active' => true ]);
 
         
         if(!$album_data){
