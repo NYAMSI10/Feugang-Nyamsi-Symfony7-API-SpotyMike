@@ -47,10 +47,15 @@ class AlbumRepository extends ServiceEntityRepository
     //        ;
     //    }
 
-    public function getAllAlbums($currentpage,$limit)
+    public function getAllAlbums($currentpage, $limit, $checkvisibility)
     {
-        $qb = $this->createQueryBuilder('al')
-            ->orderBy('al.id', 'ASC')
+        $qb = $this->createQueryBuilder('al');
+        if ($checkvisibility) {
+            $qb->where('al.visibility = :checkvisibility')
+                ->setParameter('checkvisibility', $checkvisibility);
+        }
+
+        $qb->orderBy('al.id', 'ASC')
             ->distinct()
             ->setFirstResult(($currentpage - 1) * $limit)
             ->setMaxResults($limit);
