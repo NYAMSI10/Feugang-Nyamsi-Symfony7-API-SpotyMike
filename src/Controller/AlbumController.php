@@ -12,6 +12,7 @@ use App\Repository\UserRepository;
 use App\Service\GenerateId;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
@@ -29,7 +30,7 @@ class AlbumController extends AbstractController
     private $serializer;
     private $validator;
 
-    public function __construct(EntityManagerInterface $entityManager, SerializerInterface $serializer, ValidatorInterface $validator)
+    public function __construct(EntityManagerInterface $entityManager, SerializerInterface $serializer, ValidatorInterface $validator,private readonly ParameterBagInterface $parameterBag)
     {
         $this->entityManager = $entityManager;
         $this->repository = $entityManager->getRepository(Album::class);
@@ -79,53 +80,13 @@ class AlbumController extends AbstractController
         ], Response::HTTP_OK);
     }
     
-
-    #[Route('/album', name: 'album_new', methods: 'POST')]
-    public function new(Request $request, GenerateId $generateId): JsonResponse
-    {
-        $existAlbum = $this->repository->findOneBy(["nom" => $request->get('nom')]);
-        
-        $artist = $this->artistRepository->findOneBy(["User_idUser" => $this->getUser()]);
-        if ($existAlbum) {
-            return $this->json([
-                'error' => true,
-                'message' => 'Ce nom existe déjà',
-            ], Response::HTTP_CONFLICT);
-        }
-
-        $album = new Album();
-        $album->setIdAlbum($generateId->randId())
-            ->setNom($request->get('nom'))
-            ->setCateg($request->get('categ'))
-            ->setYear($request->get('year'))
-            ->setArtistUserIdUser($artist);
-
-        $errors = $this->validator->validate($album);
-        if (count($errors) > 0) {
-
-            return $this->json([
-                'error' => true,
-                'message' => 'Une ou plusieurs données obligatoires sont manquantes',
-            ], Response::HTTP_BAD_REQUEST);
-        }
-
-        $this->entityManager->persist($album);
-        $this->entityManager->flush();
-        return $this->json([
-            'error' => false,
-            'message' => 'Album ajouté avec succès',
-        ], Response::HTTP_OK);
-    }
-
     #[Route('album/{id}', name: 'album_show', methods: ['GET'])]
-    public function show(Request $request, int $id = 0): JsonResponse
+    public function show(Request $request, string $id = null): JsonResponse
     {
         $user = $this->entityManager->getRepository(User::class)->findOneBy(['email' => $this->getUser()->getUserIdentifier()]);
-      
-       
         $id = $request->get('id');
 
-        if (!isset($id) || $id == 0) {
+        if (!isset($id)) {
             $data = $this->serializer->serialize(
                 ['error' => true, 'message' => "L'id de l'album est obligatoire pour cette requête"],
                 'json'
@@ -211,6 +172,135 @@ class AlbumController extends AbstractController
        
     }
 
+    #[Route('/album', name: 'album_new', methods: 'POST')]
+    public function new(Request $request, GenerateId $generateId): JsonResponse
+    {
+        $categories = ["rap","r'n'b","gospel","soul","country","hip hop","jazz","le Mike"];
+        $parameters = $request->request->all();
+
+        $user = $this->entityManager->getRepository(User::class)->findOneBy(['email' => $this->getUser()->getUserIdentifier()]);
+        if (!in_array('ROLE_ARTIST', $user->getRoles(), true))
+            return $this->json([
+                'error' => true,
+                'message' => "Vous n'avez pas l'autorisation pour accèderà cet album.",
+            ], Response::HTTP_FORBIDDEN);
+
+        // Check if there are any parameters other than "label" and "categorie"
+        $allowedParameters = ['visibility', 'cover','title','categorie'];
+        foreach ($parameters as $key => $value) {
+            if (!in_array($key, $allowedParameters)) {
+                return $this->json([
+                    'error' => true,
+                    'message' => 'Les paramètres fournis sont invalides. Veuillez vérifier les données soumises.',
+                ], Response::HTTP_BAD_REQUEST);
+            }
+        }
+
+        if ($parameters['visibility'] != 0 && $parameters['visibility'] != 1) {
+            return $this->json([
+                'error' => true,
+                'message' => 'La valeur du champ visibility est invalide. Les valeurs autorisés sont 0 pour invisible, 1 pour visible.',
+            ], Response::HTTP_BAD_REQUEST);
+        }
+
+        $decodedData = json_decode($parameters['categorie']);
+        $titlepattern = '/^[\p{L}\p{N}\s\p{P}]{1,90}$/u';
+
+
+        if (!($decodedData !== null && json_last_error() === JSON_ERROR_NONE) || !preg_match($titlepattern, $parameters['title'])) {
+            return $this->json([
+                'error' => true,
+                'message' => 'Erreur de validation des données.',
+            ], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        $missingCategories = array_diff($decodedData, $categories);
+
+        if (!empty($missingCategories)) {
+            return $this->json([
+                'error' => true,
+                'message' => 'Les catégorie ciblée sont invalide.',
+            ], Response::HTTP_BAD_REQUEST);
+        } 
+
+        $artist = $user->getArtist();
+        $existAlbum = $this->repository->findOneBy(["nom" => $parameters['title'],"artist_User_idUser" => $artist]);
+        if ($existAlbum) {
+            return $this->json([
+                'error' => true,
+                'message' => 'Ce titre est déjà pris. Veuillez en choisir un autre.',
+            ], Response::HTTP_CONFLICT);
+        }
+
+        $explodeData = explode(",", $parameters['cover']);
+        $name = '';
+        if (count($explodeData) == 2) {
+
+            $decodedCover = base64_decode($explodeData[1]);
+            $imageInfo = getimagesizefromstring($decodedCover);
+
+            if ($decodedCover === false || empty($decodedCover) || ($imageInfo === false)) {
+                return $this->json([
+                    'error' => true,
+                    'message' => 'Le serveur ne peut pas décoder le contenu base64 en fichier binaire',
+                ], Response::HTTP_UNPROCESSABLE_ENTITY);      
+            }
+
+            $format = null;
+            $jpegHeader = 'data:image/jpeg;base64';
+            $pngHeader = 'data:image/png;base64';
+            
+            // Check if the header matches known image format headers
+            if (strpos($explodeData[0], $jpegHeader) === 0) {
+                $format = 'jpeg';
+            } elseif (strpos($explodeData[0], $pngHeader) === 0) {
+                $format ='png';
+            }
+
+            if($format == null) {
+                return $this->json([
+                    'error' => true,
+                    'message' => "Erreur sur le format du fichier qui n'est pas pris en compte.",
+                ], Response::HTTP_UNPROCESSABLE_ENTITY);  
+            }
+            $imageSizeBytes = strlen($decodedCover);
+            $imageSizeMB = $imageSizeBytes / (1024 * 1024);
+            if (!($imageSizeMB >= 1 && $imageSizeMB <= 7)) {
+                return $this->json([
+                    'error' => true,
+                    'message' => "Le fichier envoyé est trop ou pas assez volumineux. Vous devez respecter la taille entre 1MB et 7MB.",
+                ], Response::HTTP_UNPROCESSABLE_ENTITY); 
+            } 
+
+            $name = uniqid('', true) . '.' . $format;
+            $dest_path = $this->parameterBag->get('AlbumImgDir') . '/' . $name;
+        
+            file_put_contents($dest_path,$decodedCover);
+        } else {
+            return $this->json([
+                'error' => true,
+                'message' => 'Le serveur ne peut pas décoder le contenu base64 en fichier binaire',
+            ], Response::HTTP_UNPROCESSABLE_ENTITY);  
+        }
+
+        $album = new Album();
+        $album->setIdAlbum($generateId->randId())
+            ->setNom($parameters['title'])
+            ->setCateg($parameters['categorie'])
+            ->setVisibility($parameters['visibility'])
+            ->setYear(date("Y"))
+            ->setArtistUserIdUser($artist)
+            ->setCover($name);
+
+        $this->entityManager->persist($album);
+        $this->entityManager->flush();
+        return $this->json([
+            'error' => false,
+            'message' => 'Album créé avec succès',
+            'id' => $album->getIdAlbum()
+        ], Response::HTTP_OK);
+    }
+
     // #[Route('album/edit/{id}', name: 'album_edit', methods: ['POST', 'PUT'])]
     // public function edit(Request $request, Album $album): JsonResponse
     // {
@@ -265,7 +355,7 @@ class AlbumController extends AbstractController
                 $label_id = $this->entityManager->getRepository(ArtistHasLabel::class)->findLabel($album->getArtistUserIdUser()->getId(),$album->getCreatedAt());
                 $label = $this->entityManager->getRepository(Label::class)->find($label_id['id']) ;
                 $responseAlbum = [
-                    'id' => $album->getId(),
+                    'id' => $album->getIdAlbum(),
                     'nom' => $album->getNom(),
                     'categ' => $album->getCateg(),
                     'cover' => $album->getCover(),
