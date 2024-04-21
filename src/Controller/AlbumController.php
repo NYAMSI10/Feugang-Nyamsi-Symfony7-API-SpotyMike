@@ -182,7 +182,7 @@ class AlbumController extends AbstractController
         if (!in_array('ROLE_ARTIST', $user->getRoles(), true))
             return $this->json([
                 'error' => true,
-                'message' => "Vous n'avez pas l'autorisation pour accèderà cet album.",
+                'message' => "Vous n'avez pas l'autorisation pour accèder à cet album.",
             ], Response::HTTP_FORBIDDEN);
 
         // Check if there are any parameters other than "label" and "categorie"
