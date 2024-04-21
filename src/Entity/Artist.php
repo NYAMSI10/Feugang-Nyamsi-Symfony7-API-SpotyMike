@@ -70,6 +70,9 @@ class Artist
     #[ORM\Column]
     private ?bool $active = true;
 
+    #[ORM\Column(length: 150, nullable: true)]
+    private ?string $avatar = null;
+
 
 
 
@@ -277,6 +280,18 @@ class Artist
     public function setActive(bool $active): static
     {
         $this->active = $active;
+
+        return $this;
+    }
+
+    public function getAvatar(): ?string
+    {
+        return $this->avatar;
+    }
+
+    public function setAvatar(?string $avatar): static
+    {
+        $this->avatar = $avatar;
 
         return $this;
     }
