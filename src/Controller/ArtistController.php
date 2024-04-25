@@ -233,7 +233,6 @@ class ArtistController extends AbstractController
         } else 
         {
             $parameters = $request->request->all();
-            // Check if there are any parameters other than "label" and "categorie"
             $allowedParameters = ['fullname', 'label','description','avatar'];
             foreach ($parameters as $key => $value) {
                 if (!in_array($key, $allowedParameters)) {
