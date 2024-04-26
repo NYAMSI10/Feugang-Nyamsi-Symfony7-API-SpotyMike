@@ -4,6 +4,7 @@ namespace App\Controller;
 
 use App\Entity\Artist;
 use App\Entity\User;
+use App\Service\FormatData;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
 use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
@@ -29,7 +30,7 @@ class LoginController extends AbstractController
     private $jwtProvider;
 
 
-    public function __construct(EntityManagerInterface $entityManager, UserPasswordHasherInterface $userPasswordHasherInterface, JWTTokenManagerInterface $jwtManager, SerializerInterface $serializer, CacheItemPoolInterface $cache, JWSProviderInterface $jwtProvider)
+    public function __construct(EntityManagerInterface $entityManager, UserPasswordHasherInterface $userPasswordHasherInterface, JWTTokenManagerInterface $jwtManager, SerializerInterface $serializer, CacheItemPoolInterface $cache, JWSProviderInterface $jwtProvider,private readonly FormatData $formatData)
     {
         $this->entityManager = $entityManager;
         $this->repository = $entityManager->getRepository(User::class);
@@ -137,20 +138,20 @@ class LoginController extends AbstractController
         if (in_array('ROLE_ARTIST', $user->getRoles(), true)) {
             $check_visibility = false;
         }
-        $artist = (object)[];
+        $artist = [];
         if ($user->getArtist()) {
-            $fullname = $user->getArtist()->getFullname();
-            $artist = $this->entityManager->getRepository(Artist::class)->findByArtistAndAlbumAndSong($fullname, $check_visibility);
+            $artist = $this->formatData->formatDataOneArtist($user->getArtist(),$user);
         }
         $user_data = [
             "firstname" => $user->getFirstname(),
-            "email" => $user->getEmail(),
-            "tel" => $user->getTel(),
-            "artist" => $artist,
             "lastname" => $user->getLastname(),
             "dateBirth" => $user->getDateBirth()->format('d-m-Y'),
             "sexe" => $user->getSexe(),
-            "createdAt" => $user->getCreatedAt()->format('Y-m-d')
+            "createdAt" => $user->getCreatedAt()->format('Y-m-d'),
+            "email" => $user->getEmail(),
+            "tel" => $user->getTel(),
+            "artist" => $artist,
+            
         ];
 
 

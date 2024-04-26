@@ -119,7 +119,7 @@ class Album
 
     public function getCover(): ?string
     {
-        return $this->cover;
+        return ($this->cover == null)?'':$this->cover;
     }
 
     public function setCover(?string $cover): static

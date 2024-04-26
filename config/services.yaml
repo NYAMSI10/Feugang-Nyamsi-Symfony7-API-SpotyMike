@@ -40,6 +40,10 @@ services:
           event: lexik_jwt_authentication.on_authentication_failure,
           method: onAuthenticationFailure,
         }
-
+  
+  formatdata:
+    class: App\Service\FormatData
+    arguments: ["@doctrine.orm.entity_manager"]
+    public: trues
   # add more service definitions when explicit configuration is needed
   # please note that last definitions always *replace* previous ones

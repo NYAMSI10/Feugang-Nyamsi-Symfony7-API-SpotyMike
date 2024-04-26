@@ -54,10 +54,11 @@ class ArtistHasLabelRepository extends ServiceEntityRepository
         ->join('ahl.idLabel','label')
         ->join('ahl.idArtist','artist')
         ->where('artist.id = :id')
-        ->andWhere(':album_created BETWEEN ahl.entrydate AND ahl.issuedate')
+        ->andWhere(':album_created BETWEEN ahl.entrydate AND COALESCE(ahl.issuedate, CURRENT_TIMESTAMP())')
         ->setParameter('id', $artist_id)
         ->setParameter('album_created', $album_created);
 
+       
         return $qb->getQuery()->getOneOrNullResult();
 
     }

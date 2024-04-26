@@ -277,7 +277,8 @@ class Artist
 
     public function getAvatar(): ?string
     {
-        return $this->avatar;
+        
+        return ($this->avatar == null)?'':$this->avatar;
     }
 
     public function setAvatar(?string $avatar): static

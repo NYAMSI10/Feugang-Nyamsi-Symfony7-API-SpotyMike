@@ -458,6 +458,7 @@ class ArtistController extends AbstractController
 
     public function formatData($artists)
     {
+        dd($artists);
         $response = [];
         foreach ($artists as $artist) {
             $artistData = [
