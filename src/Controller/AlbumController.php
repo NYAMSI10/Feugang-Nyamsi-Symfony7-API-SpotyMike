@@ -479,7 +479,7 @@ class AlbumController extends AbstractController
                         'firstname' => $collaborator->getUserIdUser()->getFirstname(),
                         'lastname' => $collaborator->getUserIdUser()->getLastname(),
                         'fullname' => $collaborator->getFullname(),
-                        //'avatar' => $collaborator->getFullname(),
+                        'avatar' => $collaborator->getAvatar(),
                         'sexe' =>  $collaborator->getUserIdUser()->getSexe(),
                         'dateBirth' => $collaborator->getUserIdUser()->getDateBirth()->format('d-m-Y'),
                         'Artist.createdAt' => $collaborator->getCreatedAt()->format('Y-m-d')

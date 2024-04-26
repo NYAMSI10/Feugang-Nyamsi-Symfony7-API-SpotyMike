@@ -413,7 +413,7 @@ class ArtistController extends AbstractController
             'firstname' => $artist->getUserIdUser()->getFirstname(),
             'lastname' => $artist->getUserIdUser()->getLastname(),
             'fullname' => $artist->getFullname(),
-            'avatar' => "ok", // Remplacez cela par la logique appropriée pour récupérer l'avatar
+            'avatar' => $artist->getAvatar(),
             "follower" => [],
             'sexe' =>  $artist->getUserIdUser()->getSexe(),
             'dateBirth' => $artist->getUserIdUser()->getDateBirth()->format('d-m-Y'),
@@ -464,7 +464,7 @@ class ArtistController extends AbstractController
                 'firstname' => $artist->getUserIdUser()->getFirstname(),
                 'lastname' => $artist->getUserIdUser()->getLastname(),
                 'fullname' => $artist->getFullname(),
-                'avatar' => "ok", // Remplacez cela par la logique appropriée pour récupérer l'avatar
+                'avatar' => $artist->getAvatar(),
                 'sexe' =>  $artist->getUserIdUser()->getSexe(),
                 'dateBirth' => $artist->getUserIdUser()->getDateBirth()->format('d-m-Y'),
                 'Artist.createdAt' => $artist->getCreatedAt()->format('Y-m-d'),
@@ -476,7 +476,7 @@ class ArtistController extends AbstractController
             foreach ($artist->getAlbums() as $album) {
 
                 $label_id = $this->entityManager->getRepository(ArtistHasLabel::class)->findLabel($artist->getId(), $album->getCreatedAt());
-                //    $label = $this->entityManager->getRepository(Label::class)->find($label_id['id']);
+                $label = $this->entityManager->getRepository(Label::class)->find($label_id['id']);
 
                 $tempAlbum = [
                     'id' => $album->getIdAlbum(),
@@ -484,7 +484,7 @@ class ArtistController extends AbstractController
                     'categ' => $album->getCateg(),
                     'cover' => $album->getCover(),
                     'year' => $album->getYear(),
-                    'label' => "ok", // Remplacez cela par la logique appropriée pour récupérer le label
+                    'label' => $label->getNom(), // Remplacez cela par la logique appropriée pour récupérer le label
                     'createdAt' => $album->getCreatedAt()->format('Y-m-d'),
                     'songs' => [],
                 ];
@@ -517,7 +517,7 @@ class ArtistController extends AbstractController
 
 
             $label_id = $this->entityManager->getRepository(ArtistHasLabel::class)->findLabel($album->getArtistUserIdUser()->getId(), $album->getCreatedAt());
-            //$label = $this->entityManager->getRepository(Label::class)->find($label_id['id']);
+            $label = $this->entityManager->getRepository(Label::class)->find($label_id['id']);
 
             $responseAlbum = [
                 'id' => $album->getIdAlbum(),
@@ -525,7 +525,7 @@ class ArtistController extends AbstractController
                 'categ' => $album->getCateg(),
                 'cover' => $album->getCover(),
                 'year' => $album->getYear(),
-                'label' => "ok",
+                'label' => $label->getNom(),
                 'createdAt' => $album->getCreatedAt()->format('Y-m-d'),
                 'songs' => [],
             ];
