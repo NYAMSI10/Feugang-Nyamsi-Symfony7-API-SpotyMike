@@ -141,7 +141,7 @@ class ArtistController extends AbstractController
 
                 return new JsonResponse($data, Response::HTTP_BAD_REQUEST, [], true);
             }
-            if (!filter_var($id_label, FILTER_VALIDATE_INT)) {
+            if (!is_string($id_label)) {
                 $data = $this->serializer->serialize(
                     ['error' => true, 'message' => "Le format de l'id du label est invalide"],
                     'json'

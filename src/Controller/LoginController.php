@@ -7,6 +7,7 @@ use App\Entity\User;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
 use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
+use Namshi\JOSE\JWT;
 use Psr\Cache\CacheItemPoolInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -15,6 +16,7 @@ use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Component\HttpFoundation\Response;
+use Lexik\Bundle\JWTAuthenticationBundle\Services\JWSProvider\JWSProviderInterface;
 
 class LoginController extends AbstractController
 {
@@ -24,9 +26,10 @@ class LoginController extends AbstractController
     private $serializer;
     private $cache;
     private $passwordHasher;
+    private $jwtProvider;
 
 
-    public function __construct(EntityManagerInterface $entityManager, UserPasswordHasherInterface $userPasswordHasherInterface, JWTTokenManagerInterface $jwtManager, SerializerInterface $serializer, CacheItemPoolInterface $cache)
+    public function __construct(EntityManagerInterface $entityManager, UserPasswordHasherInterface $userPasswordHasherInterface, JWTTokenManagerInterface $jwtManager, SerializerInterface $serializer, CacheItemPoolInterface $cache, JWSProviderInterface $jwtProvider)
     {
         $this->entityManager = $entityManager;
         $this->repository = $entityManager->getRepository(User::class);
@@ -34,6 +37,7 @@ class LoginController extends AbstractController
         $this->serializer = $serializer;
         $this->cache = $cache;
         $this->passwordHasher = $userPasswordHasherInterface;
+        $this->jwtProvider = $jwtProvider;
     }
 
     #[Route('/login', name: 'app_login_post', methods: 'POST')]
@@ -235,15 +239,21 @@ class LoginController extends AbstractController
         }
     }
 
-    #[Route('/reset-password/{token}', name: 'app_reset_password', methods: 'POST')]
-    public function resetPassword(Request $request,String $token): JsonResponse
+    #[Route('/reset-password/{token?}', name: 'app_reset_password', methods: 'POST')]
+    public function resetPassword(Request $request,String $token = null): JsonResponse
     {
 
         $password = $request->get('password');
         $password_pattern = '/^(?=.*\d)(?=.*[a-z])(?=.*[A-Z])(?!.* )(?=.*[^a-zA-Z0-9]).{8,20}$/';
+        $dataToken = $this->jwtProvider->load($token);
+        if(!$token || !$dataToken->isVerified($token)) {
+            return $this->json([
+                'error' => true,
+                'message' => "Token de réinitialisation manquant ou invalide. Veuillez utiliser le lien fourni dans l'email de réinitialisation de mot de passe."
+            ], Response::HTTP_BAD_REQUEST);
+        }
         if ($token) {
-
-            if ($token == $this->cache->getItem('token')->get()) {
+            if ( ($this->cache->getItem('token')->isHit()) && ($token == $this->cache->getItem('token')->get())) {
                 $user = $this->repository->findOneBy(['email' => $this->cache->getItem('email')->get()]);
                 
                 if (!$password) {
@@ -255,7 +265,7 @@ class LoginController extends AbstractController
                 if (!preg_match($password_pattern, $password)) {
                     return $this->json([
                         'error' => true,
-                        'message' => "Le nouveau mot de passe ne respecte pas les critères requis. Il doit contenir au moins une majuscule, une minuscule,un chiffre, un caractère spécial et être composé d'au moins 8 caractères."
+                        'message' => "Le nouveau mot de passe ne respecte pas les critères requis. Il doit contenir au moins une majuscule, une minuscule, un chiffre, un caractère spécial et être composé d'au moins 8 caractères."
                     ], Response::HTTP_BAD_REQUEST);
                 }
 
@@ -267,8 +277,8 @@ class LoginController extends AbstractController
                 $this->entityManager->persist($user);
                 $this->entityManager->flush();
                 return $this->json([
-                    'error' => false,
-                    'message' => "Votre mot de passe a été réinitialisé avec succès. Vous pouvez maintenant vous connecter avce votre nouveau mot de passe."
+                    'success' => true,
+                    'message' => "Votre mot de passe a été réinitialisé avec succès. Vous pouvez maintenant vous connecter avec votre nouveau mot de passe."
                 ], Response::HTTP_OK);
             } else {
                 return $this->json([
@@ -276,11 +286,6 @@ class LoginController extends AbstractController
                     'message' => "Votre token de réinitialisation de mot de passe a expiré. Veuillez refaire une demande de réinitialisation de mot de passe."
                 ], Response::HTTP_GONE);
             }
-        } else {
-            return $this->json([
-                'error' => true,
-                'message' => "Votre token de réinitialisation manquant ou invalide. Veuillez utiliser le lien fourni dans l'email de réinitialisation de mot de passe"
-            ], Response::HTTP_BAD_REQUEST);
         }
     }
 }
