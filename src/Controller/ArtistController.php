@@ -11,6 +11,7 @@ use App\Entity\User;
 use Doctrine\ORM\EntityManagerInterface;
 use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
@@ -27,7 +28,7 @@ class ArtistController extends AbstractController
     private $validator;
     private $jwtManager;
 
-    public function __construct(EntityManagerInterface $entityManager, SerializerInterface $serializer, ValidatorInterface $validator, JWTTokenManagerInterface $jwtManager)
+    public function __construct(EntityManagerInterface $entityManager, SerializerInterface $serializer, ValidatorInterface $validator, JWTTokenManagerInterface $jwtManager, private readonly ParameterBagInterface $parameterBag)
     {
         $this->entityManager = $entityManager;
         $this->repository = $entityManager->getRepository(Artist::class);
@@ -191,7 +192,7 @@ class ArtistController extends AbstractController
 
                 return new JsonResponse($data, Response::HTTP_BAD_REQUEST, [], true);
             }
-            if (filter_var($id_label, FILTER_VALIDATE_INT)) {
+            if (!is_string($id_label)) {
                 $data = $this->serializer->serialize(
                     ['error' => true, 'message' => "Le format de l'id du label est invalide"],
                     'json'
@@ -270,25 +271,18 @@ class ArtistController extends AbstractController
                 return $this->json(['errors' => $e->getMessage(), 'message' => 'Une erreur est survenue'], Response::HTTP_INTERNAL_SERVER_ERROR);
             }
         } else {
-            $id = $request->get('id');
-            $artist = $user->getArtist();
-            if (isset($id)) {
-                $artist = $this->repository->find($id);
-                if (!$artist) {
-                    $data = $this->serializer->serialize(
-                        ['error' => true, 'message' => "Artiste non trouvé. Veuillez vérifier les informations fournies."],
-                        'json'
-                    );
-                    return new JsonResponse($data, Response::HTTP_NOT_FOUND, [], true);
-                }
-                if ($user->getArtist() != $artist) {
-                    $data = $this->serializer->serialize(
-                        ['error' => true, 'message' => "Vous n'étes pas autorisé à accèder aux informations de cet artiste"],
-                        'json'
-                    );
-                    return new JsonResponse($data, Response::HTTP_FORBIDDEN, [], true);
+            $parameters = $request->request->all();
+            $allowedParameters = ['fullname', 'label', 'description', 'avatar'];
+            foreach ($parameters as $key => $value) {
+                if (!in_array($key, $allowedParameters)) {
+                    return $this->json([
+                        'error' => true,
+                        'message' => 'Les paramètres fournis sont invalides. Veuillez vérifier les données soumises.',
+                    ], Response::HTTP_BAD_REQUEST);
                 }
             }
+            $artist = $user->getArtist();
+
             if ($fullname && $fullname != $artist->getFullname()) {
                 $searchArtist = $this->repository->findOneBy(['fullname' => $fullname]);
                 if ($searchArtist) {
@@ -300,37 +294,66 @@ class ArtistController extends AbstractController
                     return new JsonResponse($data, Response::HTTP_CONFLICT, [], true);
                 }
             }
+            $name = '';
+            if ($parameters['avatar']) {
+                $explodeData = explode(",", $parameters['avatar']);
 
-            $label = $this->entityManager->getRepository(Label::class)->find($id_label);
+                if (count($explodeData) == 2) {
+
+                    $decodedCover = base64_decode($explodeData[1]);
+                    $imageInfo = getimagesizefromstring($decodedCover);
+
+                    if ($decodedCover === false || empty($decodedCover) || ($imageInfo === false)) {
+                        return $this->json([
+                            'error' => true,
+                            'message' => 'Le serveur ne peut pas décoder le contenu base64 en fichier binaire',
+                        ], Response::HTTP_UNPROCESSABLE_ENTITY);
+                    }
+
+                    $format = null;
+                    $jpegHeader = 'data:image/jpeg;base64';
+                    $pngHeader = 'data:image/png;base64';
+
+                    // Check if the header matches known image format headers
+                    if (strpos($explodeData[0], $jpegHeader) === 0) {
+                        $format = 'jpeg';
+                    } elseif (strpos($explodeData[0], $pngHeader) === 0) {
+                        $format = 'png';
+                    }
+
+                    if ($format == null) {
+                        return $this->json([
+                            'error' => true,
+                            'message' => "Erreur sur le format du fichier qui n'est pas pris en compte.",
+                        ], Response::HTTP_UNPROCESSABLE_ENTITY);
+                    }
+                    $imageSizeBytes = strlen($decodedCover);
+                    $imageSizeMB = $imageSizeBytes / (1024 * 1024);
+                    if (!($imageSizeMB >= 1 && $imageSizeMB <= 7)) {
+                        return $this->json([
+                            'error' => true,
+                            'message' => "Le fichier envoyé est trop ou pas assez volumineux. Vous devez respecter la taille entre 1MB et 7MB.",
+                        ], Response::HTTP_UNPROCESSABLE_ENTITY);
+                    }
+
+                    $name = uniqid('', true) . '.' . $format;
+                    $dest_path = $this->parameterBag->get('ArtistImgDir') . '/' . $name;
+
+                    file_put_contents($dest_path, $decodedCover);
+                } else {
+                    return $this->json([
+                        'error' => true,
+                        'message' => 'Le serveur ne peut pas décoder le contenu base64 en fichier binaire',
+                    ], Response::HTTP_UNPROCESSABLE_ENTITY);
+                }
+            }
 
 
             $artist->setFullname(isset($fullname) ? $fullname : $artist->getFullname());
             $artist->setDescription(isset($description) ? $description : $artist->getDescription());
-
-            $errors = $this->validator->validate($artist);
-            if (count($errors) > 0 || !$label) {
-                $data = $this->serializer->serialize(
-                    ['error' => true, 'message' => "Les parametres fournis sont invalides.Veuillez vérifier les données soumises"],
-                    'json'
-                );
-
-                return new JsonResponse($data, Response::HTTP_BAD_REQUEST, [], true);
-            }
+            $artist->setAvatar($name);
 
             $this->entityManager->persist($artist);
-
-            $lastlabel = $this->entityManager->getRepository(ArtistHasLabel::class)->findOneBy(['idArtist' => $artist], ['id' => 'DESC']);
-            if ($lastlabel && ($lastlabel->getIssuedate() == null)) {
-                $lastlabel->setIssuedate(new \DateTimeImmutable());
-                $this->entityManager->persist($lastlabel);
-            }
-            $artistHasLabel = new ArtistHasLabel();
-            $artistHasLabel->setIdArtist($artist)
-                ->setIdLabel($label)
-                ->setEntrydate(new \DateTimeImmutable());
-
-            $this->entityManager->persist($artistHasLabel);
-            $this->entityManager->flush();
 
             $data = $this->serializer->serialize(
                 ['error' => false, 'message' => "Les informations de l'artiste ont été mises à jour avec succès"],
@@ -341,37 +364,37 @@ class ArtistController extends AbstractController
         }
     }
 
-    // #[Route('/artist', name: 'artist_delete', methods: ['DELETE'])]
-    // public function delete(): JsonResponse
-    // {
-    //     $artist = $this->repository->findOneBy(['User_idUser' => $this->getUser()->getId()]);
+    #[Route('/artist', name: 'artist_delete', methods: ['DELETE'])]
+    public function delete(): JsonResponse
+    {
+        $artist = $this->repository->findOneBy(['User_idUser' => $this->getUser()->getId()]);
 
-    //     if (!$artist) {
-    //         $data = $this->serializer->serialize(
-    //             ['error' => true, 'message' => "Compte artiste non trouvé. Vérifiez les informations fournies et réessayez"],
-    //             'json'
-    //         );
+        if (!$artist) {
+            $data = $this->serializer->serialize(
+                ['error' => true, 'message' => "Compte artiste non trouvé. Vérifiez les informations fournies et réessayez"],
+                'json'
+            );
 
-    //         return new JsonResponse($data, Response::HTTP_NOT_FOUND, [], true);
-    //     }
-    //     if (!$artist->isActive()) {
-    //         $data = $this->serializer->serialize(
-    //             ['error' => true, 'message' => "Ce compte artiste est déjà désactivé "],
-    //             'json'
-    //         );
+            return new JsonResponse($data, Response::HTTP_NOT_FOUND, [], true);
+        }
+        if (!$artist->isActive()) {
+            $data = $this->serializer->serialize(
+                ['error' => true, 'message' => "Ce compte artiste est déjà désactivé "],
+                'json'
+            );
 
-    //         return new JsonResponse($data, Response::HTTP_GONE, [], true);
-    //     }
-    //     $artist->setActive(false);
-    //     $this->entityManager->persist($artist);
-    //     $this->entityManager->flush();
-    //     $data = $this->serializer->serialize(
-    //         ['error' => false, 'message' => "Le compte artiste a été  désactivé avec succès"],
-    //         'json'
-    //     );
+            return new JsonResponse($data, Response::HTTP_GONE, [], true);
+        }
+        $artist->setActive(false);
+        $this->entityManager->persist($artist);
+        $this->entityManager->flush();
+        $data = $this->serializer->serialize(
+            ['error' => false, 'message' => "Le compte artiste a été  désactivé avec succès"],
+            'json'
+        );
 
-    //     return new JsonResponse($data, Response::HTTP_OK, [], true);
-    // }
+        return new JsonResponse($data, Response::HTTP_OK, [], true);
+    }
 
 
 

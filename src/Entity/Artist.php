@@ -61,7 +61,7 @@ class Artist
     #[ORM\Column]
     private ?bool $active = true;
 
-    #[ORM\Column(length: 255, nullable: true)]
+    #[ORM\Column(length: 150, nullable: true)]
     private ?string $avatar = null;
 
 

@@ -58,7 +58,7 @@ class Song
     private ?\DateTimeInterface $createdAt = null;
 
     #[ORM\Column]
-    private ?bool $active = null;
+    private ?bool $active = true;
 
     public function __construct()
     {

@@ -41,6 +41,7 @@ security:
     - { path: ^/reset-password, roles: PUBLIC_ACCESS }
     - { path: ^/register, roles: PUBLIC_ACCESS }
     - { path: ^/, roles: IS_AUTHENTICATED_FULLY }
+    - { path: ^/$, roles: PUBLIC_ACCESS }
   role_hierarchy:
     ROLE_ARTIST: ROLE_USER
 when@test:

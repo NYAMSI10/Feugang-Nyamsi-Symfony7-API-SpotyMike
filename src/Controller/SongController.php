@@ -3,6 +3,7 @@
 namespace App\Controller;
 
 use App\Entity\Song;
+use App\Entity\User;
 use App\Repository\AlbumRepository;
 use App\Repository\ArtistRepository;
 use App\Repository\PlaylistHasSongRepository;
@@ -16,6 +17,7 @@ use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
+use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 
 class SongController extends AbstractController
 {
@@ -23,7 +25,7 @@ class SongController extends AbstractController
     private $serializer;
     private $entityManager;
 
-    public function __construct(EntityManagerInterface $entityManager, SerializerInterface $serializer)
+    public function __construct(EntityManagerInterface $entityManager, SerializerInterface $serializer,private readonly ParameterBagInterface $parameterBag)
     {
         $this->entityManager = $entityManager;
         $this->repository = $entityManager->getRepository(Song::class);
@@ -66,27 +68,70 @@ class SongController extends AbstractController
         }
     }
 
-    #[Route('song', name: 'app_create_song', methods: ['POST'])]
-    public function create(Request $request, AlbumRepository $albumRepository, PlaylistHasSongRepository $playlistHasSongRepository, ArtistRepository $artistRepository, GenerateId $generateId): JsonResponse
+    #[Route('/album/{id}/song', name: 'app_create_song', methods: ['POST'])]
+    public function create(Request $request,String $id, AlbumRepository $albumRepository, ArtistRepository $artistRepository, GenerateId $generateId): JsonResponse
     {
-        $artist = $artistRepository->findOneBy(['User_idUser' => $this->getUser()->getId()]);
-        if($artist) {
-            $song = new Song();
-            $song->setIdSong($generateId->randId())
-                ->setTitle($request->get('title'))
-                ->setUrl($request->get('url'))
-                ->setCover($request->get('cover'))
-                ->setVisibility($request->get('visibility'))
-                ->addArtistIdUser($artist)
-                ->setAlbum($albumRepository->find($request->get('idalbum')))
-                ->setPlaylistHasSong($playlistHasSongRepository->find($request->get('idplaylisthassong')));
-            $this->entityManager->persist($song);
-            $this->entityManager->flush();
-            $jsonSongList = $this->serializer->serialize($song, 'json', ['groups' => 'getSongs']);
-            return new JsonResponse($jsonSongList, Response::HTTP_CREATED, [], true);
-        }
         
-        return new JsonResponse(['message'=>'Error'] , Response::HTTP_NOT_FOUND, [], true);
+        $user = $this->entityManager->getRepository(User::class)->findOneBy(['email' => $this->getUser()->getUserIdentifier()]);
+        $album = $albumRepository->findOneBy(["idAlbum"=>$id]);
+        if (!$album)
+            return $this->json([
+                'error' => true,
+                'message' => "Aucun album trouvé correspondant au nom fourni.",
+            ], Response::HTTP_NOT_FOUND);
+
+        $artist = $artistRepository->findOneBy(['User_idUser' => $user->getId()]);
+        if (!in_array('ROLE_ARTIST', $user->getRoles(), true) || (in_array('ROLE_ARTIST', $user->getRoles(), true) && ($album->getArtistUserIdUser() != $artist)))
+            return $this->json([
+                'error' => true,
+                'message' => "Vous n'avez pas l'autorisation pour accèder à cet album.",
+            ], Response::HTTP_FORBIDDEN);
+
+        
+        $song_data = $request->getContent();
+
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $mime = finfo_buffer($finfo, $song_data);
+        finfo_close($finfo);
+        if (empty($song_data) || !in_array($mime, ['video/mp4', 'audio/wav'])) {
+            return $this->json([
+                'error' => true,
+                'message' => "Erreur sur le format du fichier qui n'est pas pris en compte.",
+            ], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        
+        $fileSize = strlen($song_data);
+        $minSize = 1 * 1024 * 1024;
+        $maxSize = 7 * 1024 * 1024;
+        if ($fileSize < $minSize || $fileSize > $maxSize) {
+            return $this->json([
+                'error' => true,
+                'message' => "Le fichier envoyé est trop ou pas assez volumineux. Vous devez respecter la taille entre 1MB et 7MB.",
+            ], Response::HTTP_UNPROCESSABLE_ENTITY); 
+        }
+
+        
+        $name = uniqid('', true) . '.' . ($mime === 'video/mp4' ? 'mp4' : 'wav');
+        $dest_path = $this->parameterBag->get('SongDir') . '/' . $name;
+    
+        file_put_contents($dest_path,$song_data);
+
+        $song = new Song();
+        $song->setIdSong($generateId->randId())
+            ->setTitle('')
+            ->setUrl($name)
+            ->setCover('')
+            ->addArtistIdUser($artist)
+            ->setAlbum($album);
+        $this->entityManager->persist($song);
+        $this->entityManager->flush();
+
+        return $this->json([
+            'error' => false,
+            'message' => "Album mis à jour avec succès.",
+            'idSong' => $song->getIdSong()
+        ], Response::HTTP_CREATED); 
         
     }
 
