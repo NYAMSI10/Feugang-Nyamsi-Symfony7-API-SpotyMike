@@ -39,7 +39,6 @@ class Artist
     private ?string $description = null;
 
 
-    #[Groups(["getArtists"])]
     #[ORM\ManyToMany(targetEntity: Song::class, mappedBy: 'Artist_idUser', cascade: ['persist', 'remove'])]
     private Collection $songs;
 
@@ -47,7 +46,7 @@ class Artist
     #[ORM\OneToMany(targetEntity: Album::class, mappedBy: 'artist_User_idUser', cascade: ['persist', 'remove'])]
     private Collection $albums;
 
-    #[Groups(["getArtist", "getLogin"])]
+    #[Groups(["getLogin"])]
     #[SerializedName('Artist.createdAt')]
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
     #[Context([DateTimeNormalizer::FORMAT_KEY => 'Y-m-d'])]
@@ -57,11 +56,13 @@ class Artist
     private Collection $users;
 
     #[ORM\OneToMany(targetEntity: ArtistHasLabel::class, mappedBy: 'idArtist')]
-
     private Collection $artistHasLabels;
 
     #[ORM\Column]
     private ?bool $active = true;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $avatar = null;
 
 
 
@@ -270,6 +271,18 @@ class Artist
     public function setActive(bool $active): static
     {
         $this->active = $active;
+
+        return $this;
+    }
+
+    public function getAvatar(): ?string
+    {
+        return $this->avatar;
+    }
+
+    public function setAvatar(?string $avatar): static
+    {
+        $this->avatar = $avatar;
 
         return $this;
     }

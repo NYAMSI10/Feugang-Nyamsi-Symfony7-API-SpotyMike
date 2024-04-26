@@ -329,16 +329,16 @@ class UserController extends AbstractController
             $artistInfo->setActive(false);
             $this->entityManager->persist($artistInfo);
             $albums = $artistInfo->getAlbums();
-            foreach($albums as $album) {
+            foreach ($albums as $album) {
                 $album->setVisibility(false);
                 $this->entityManager->persist($album);
                 $songs = $album->getSongs();
-                foreach($songs as $song) {
+                foreach ($songs as $song) {
                     $song->setVisibility(false);
                     $this->entityManager->persist($song);
                 }
             }
-            
+
             //$this->entityManager->remove($artistInfo);
         }
         $this->entityManager->flush();

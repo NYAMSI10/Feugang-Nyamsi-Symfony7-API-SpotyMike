@@ -22,37 +22,73 @@ class AlbumRepository extends ServiceEntityRepository
         parent::__construct($registry, Album::class);
     }
 
-    //    /**
-    //     * @return Album[] Returns an array of Album objects
-    //     */
-    //    public function findByExampleField($value): array
-    //    {
-    //        return $this->createQueryBuilder('a')
-    //            ->andWhere('a.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->orderBy('a.id', 'ASC')
-    //            ->setMaxResults(10)
-    //            ->getQuery()
-    //            ->getResult()
-    //        ;
-    //    }
 
-    //    public function findOneBySomeField($value): ?Album
-    //    {
-    //        return $this->createQueryBuilder('a')
-    //            ->andWhere('a.exampleField = :val')
-    //            ->setParameter('val', $value)
-    //            ->getQuery()
-    //            ->getOneOrNullResult()
-    //        ;
-    //    }
 
     public function getAllAlbums($currentpage, $limit, $checkvisibility)
     {
         $qb = $this->createQueryBuilder('al');
         if ($checkvisibility) {
+            $qb->where('al.visibility =:checkvisibility')
+                ->setParameter('checkvisibility', $checkvisibility);
+        }
+
+        $qb->orderBy('al.id', 'ASC')
+            ->distinct()
+            ->setFirstResult(($currentpage - 1) * $limit)
+            ->setMaxResults($limit);
+        /*->getQuery()
+        ->getResult();
+        dd($qb);*/
+        return new Paginator($qb);
+    }
+
+    public function getAllAlbumsVisibility($id)
+    {
+        return $this->createQueryBuilder('al')
+            ->select('al')
+            ->andWhere('al.artist_User_idUser = :id')
+            ->andWhere('al.visibility = 1')
+
+            ->setParameter('id', $id)
+            ->getQuery()
+            ->getResult();
+    }
+    public function getAllAlbumsIndefferent($id)
+    {
+        return $this->createQueryBuilder('al')
+            ->select('al')
+            ->andWhere('al.artist_User_idUser = :id')
+            ->setParameter('id', $id)
+            ->getQuery()
+            ->getResult();
+    }
+
+
+    public function searchAlbum($nom, $fullname, $label, $year, $featuring, $category, $currentpage, $limit, $checkvisibility)
+    {
+        $qb = $this->createQueryBuilder('al')
+            ->select('al', 'a')
+            ->join('al.artist_User_idUser', 'a');
+        if ($checkvisibility) {
             $qb->where('al.visibility = :checkvisibility')
                 ->setParameter('checkvisibility', $checkvisibility);
+        }
+
+        if ($nom) {
+            $qb->andwhere('al.nom LIKE :nom')
+                ->setParameter('nom', '%' . $nom . '%');
+        }
+        if ($year) {
+            $qb->andwhere('al.year =:year')
+                ->setParameter('year', $year);
+        }
+        if ($category) {
+            $qb->andwhere('al.categ =:categ')
+                ->setParameter('categ', $category);
+        }
+        if ($fullname) {
+            $qb->andwhere('a.id IN (:fullname)')
+                ->setParameter('fullname', $fullname);
         }
 
         $qb->orderBy('al.id', 'ASC')

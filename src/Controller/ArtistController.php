@@ -37,89 +37,91 @@ class ArtistController extends AbstractController
     }
 
 
-    #[Route('/artist', name: 'artist_list', methods: ['GET'])]
-    public function index(Request $request): JsonResponse
+    #[Route('/artist/{fullname}', name: 'artist_list', methods: ['GET'])]
+    public function index(Request $request, string $fullname = 'none'): JsonResponse
     {
-        $page = 1;
-        $limit = 5;
-
-        $check_visibility = 0;
-        $user = $this->entityManager->getRepository(User::class)->findOneBy(['email' => $this->getUser()->getUserIdentifier()]);
-
-        if (!in_array('ROLE_ARTIST', $user->getRoles(), true))
-            $check_visibility = 1;
-
-
         $current_page = $request->get('currentPage');
 
-        if (isset($current_page)) {
-            if (!is_numeric($current_page) || $current_page <= 0) {
+        if ($current_page) {
+            $page = 1;
+            $limit = 5;
+
+            if (isset($current_page)) {
+                if ((!is_numeric($current_page)) || ($current_page <= 0) || !$current_page) {
+                    $data = $this->serializer->serialize([
+                        'error' => true,
+                        'message' => "Le paramètre de pagination est invalide. Veuillez fournir un numéro de page valide"
+                    ], 'json');
+                    return new JsonResponse($data, Response::HTTP_BAD_REQUEST, [], true);
+                }
+            }
+            if (!$current_page) {
                 $data = $this->serializer->serialize([
                     'error' => true,
                     'message' => "Le paramètre de pagination est invalide. Veuillez fournir un numéro de page valide"
                 ], 'json');
                 return new JsonResponse($data, Response::HTTP_BAD_REQUEST, [], true);
             }
-        }
 
+            $artists = $this->repository->getAllArtist($current_page, $limit);
+            $nb_items = is_countable($artists) ? count($artists) : 0;
 
-        $artistes_data = $this->repository->findAllWithPagination($check_visibility, ($current_page) ? intval($current_page) : $page, $limit);
-        if ($artistes_data['artists']) {
-            $data = $this->serializer->serialize([
+            if (($nb_items == 0) ||  ($current_page > ceil($nb_items / $limit))) {
+                return $this->json([
+                    'error' => true,
+                    'message' => 'Aucun artist trouvé pour la page demandée.',
+                ], Response::HTTP_NOT_FOUND);
+            }
+
+            $artists_data = $this->formatData($artists);
+
+            return $this->json([
                 'error' => false,
-                'artists' => $artistes_data['artists'],
-                'pagination' => $artistes_data['pagination'],
-                'message' => "Informations des artistes récupérées avec succès."
-            ], 'json');
-            return new JsonResponse($data, Response::HTTP_OK, [], true);
+                'artists' => $artists_data,
+                'message' => "Informations des artistes récupérées avec succès.",
+                'pagination' => [
+                    'current_page' => $current_page,
+                    'totalPages' => ceil($nb_items / $limit),
+                    'totalArtiste' => $nb_items,
+                ]
+            ], Response::HTTP_OK);
         } else {
-            $data = $this->serializer->serialize([
-                'error' => true,
-                'message' => "Aucun artiste trouvé pour la page demandée"
-            ], 'json');
-            return new JsonResponse($data, Response::HTTP_NOT_FOUND, [], true);
+
+            $artist = $this->repository->findOneBy(["fullname" => $fullname]);
+
+
+            if ($fullname == 'none') {
+                $data = $this->serializer->serialize(
+                    ['error' => true, 'message' => "Le nom d'artiste est obligatoire pour cette requete"],
+                    'json'
+                );
+
+                return new JsonResponse($data, Response::HTTP_BAD_REQUEST, [], true);
+            }
+            if (!preg_match('/^[A-Z a-z 0-9]/', $fullname) || !is_string($fullname)) {
+                $data = $this->serializer->serialize(
+                    ['error' => true, 'message' => "Le format du nom d'artiste fourni est invalide"],
+                    'json'
+                );
+                return new JsonResponse($data, Response::HTTP_BAD_REQUEST, [], true);
+            }
+
+            if (!$artist) {
+                $data = $this->serializer->serialize(
+                    ['error' => true, 'message' => "Aucun artiste trouvé correspondant au nom fourni"],
+                    'json'
+                );
+                return new JsonResponse($data, Response::HTTP_NOT_FOUND, [], true);
+            }
+
+            $artist_data = $this->formatDataOneArtist($artist);
+            return $this->json([
+                'error' => false,
+                'artist' => $artist_data,
+            ], Response::HTTP_OK);
         }
     }
 
-    #[Route('/artist/{fullname}', name: 'artist_show',  methods: ['GET'])]
-    public function show(Request $request, string $fullname = 'none'): JsonResponse
-    {
-        $user = $this->entityManager->getRepository(User::class)->findOneBy(['email' => $this->getUser()->getUserIdentifier()]);
-
-        if ($fullname == 'none') {
-            $data = $this->serializer->serialize(
-                ['error' => true, 'message' => "Le nom d'artiste est obligatoire pour cette requete"],
-                'json'
-            );
-
-            return new JsonResponse($data, Response::HTTP_BAD_REQUEST, [], true);
-        }
-        if (!preg_match('/[^A-Za-z0-9]/', $fullname) || !is_string($fullname)) {
-            $data = $this->serializer->serialize(
-                ['error' => true, 'message' => "Le format du nom d'artiste fourni est invalide"],
-                'json'
-            );
-
-            return new JsonResponse($data, Response::HTTP_BAD_REQUEST, [], true);
-        }
-
-        $check_visibility = true;
-        if (in_array('ROLE_ARTIST', $user->getRoles(), true)) {
-            $check_visibility = false;
-        }
-
-        $artiste_data = $this->repository->findByArtistAndAlbumAndSong($fullname, $check_visibility);
-        if ($artiste_data) {
-            $data = $this->serializer->serialize(['error' => false, 'artist' =>   $artiste_data], 'json');
-            return new JsonResponse($data, Response::HTTP_OK, [], true);
-        } else {
-            $data = $this->serializer->serialize(
-                ['error' => true, 'message' => "Aucun artiste trouvé correspondant au nom fourni"],
-                'json'
-            );
-            return new JsonResponse($data, Response::HTTP_NOT_FOUND, [], true);
-        }
-    }
 
     #[Route('/artist', name: 'artist_new_or_edit',  methods: ['POST'])]
     public function new(Request $request): JsonResponse
@@ -128,9 +130,58 @@ class ArtistController extends AbstractController
         $fullname = $request->get('fullname');
         $id_label = $request->get('label');
         $description = $request->get('description');
+        $avatar = $request->get('avatar');
+
 
         if (!in_array('ROLE_ARTIST', $user->getRoles(), true)) {
 
+            if ($avatar) {
+                // Cela sépare la chaîne en utilisant '/' et récupère le deuxième élément (l'extension)
+                $image_decodee = base64_decode($avatar);
+                $taille = strlen($image_decodee) * 8;
+                $decoded_data = strpos($avatar, 'data:image/') === 0;
+
+                if (!$decoded_data) {
+                    $data = $this->serializer->serialize(
+                        ['error' => true, 'message' => "Le serveur ne peut pas décoder le contenu en base64 en fichier binaire."],
+                        'json'
+                    );
+
+                    return new JsonResponse($data, Response::HTTP_UNPROCESSABLE_ENTITY, [], true);
+                }
+                $explodeData = explode(",", $avatar);
+                $fileType = explode('/', $explodeData[0])[1];
+                $formatList = ["png", "jpeg"];
+                if (
+                    !in_array(explode(";", $fileType)[0], $formatList, true)
+                ) {
+                    $data = $this->serializer->serialize(
+                        ['error' => true, 'message' => "Erreur sur le format du fichier qui n'est pas pris en charge. "],
+                        'json'
+                    );
+
+                    return new JsonResponse($data, Response::HTTP_UNPROCESSABLE_ENTITY, [], true);
+                }
+
+                if ((1000000 > $taille) && ($taille > 7_000_000)) {
+                    $data = $this->serializer->serialize(
+                        ['error' => true, 'message' => "Le fichier envoyé est trop ou pas assez volumineux. vous devez respecter la taille entre 1mb et 7mb."],
+                        'json'
+                    );
+
+                    return new JsonResponse($data, Response::HTTP_UNPROCESSABLE_ENTITY, [], true);
+                }
+
+
+
+                if (count($explodeData) == 2) {
+                    $file = base64_decode($explodeData[1]);
+                    $format = explode(";", $fileType)[0];
+                    $name = uniqid('', true) . '.' . $format;
+                    $dest_path = $this->getParameter('ArtistImgDir') . '/' . $name;
+                    file_put_contents($dest_path, $file);
+                }
+            };
 
             if ((!$fullname) || (!$id_label)) {
                 $data = $this->serializer->serialize(
@@ -140,7 +191,7 @@ class ArtistController extends AbstractController
 
                 return new JsonResponse($data, Response::HTTP_BAD_REQUEST, [], true);
             }
-            if (!filter_var($id_label, FILTER_VALIDATE_INT)) {
+            if (filter_var($id_label, FILTER_VALIDATE_INT)) {
                 $data = $this->serializer->serialize(
                     ['error' => true, 'message' => "Le format de l'id du label est invalide"],
                     'json'
@@ -148,8 +199,6 @@ class ArtistController extends AbstractController
 
                 return new JsonResponse($data, Response::HTTP_BAD_REQUEST, [], true);
             }
-
-
 
             $today = new \DateTime();
             $age = $today->diff($user->getDateBirth())->y;
@@ -172,6 +221,15 @@ class ArtistController extends AbstractController
 
                 return new JsonResponse($data, Response::HTTP_CONFLICT, [], true);
             }
+            $label = $this->entityManager->getRepository(Label::class)->findOneBy(["idLabel" => $id_label]);
+            if (!$label) {
+                $data = $this->serializer->serialize(
+                    ['error' => true, 'message' => "L'id du label est invalide"],
+                    'json'
+                );
+
+                return new JsonResponse($data, Response::HTTP_BAD_REQUEST, [], true);
+            }
 
             try {
                 $user->setRoles(["ROLE_ARTIST", "ROLE_USER"]);
@@ -183,37 +241,16 @@ class ArtistController extends AbstractController
                 $artist->setUserIdUser($user);
                 $artist->setFullname($fullname);
                 // $artist->setLabel($label);
+                $artist->setAvatar($name);
                 $artist->setDescription(isset($description) ? $description : '');
-                $errors = $this->validator->validate($artist);
-                if (count($errors) > 0) {
-                    $errorMessages = [];
-                    foreach ($errors as $error) {
-                        $errorMessages[] = $error->getMessage();
-                    }
-                    $data = $this->serializer->serialize(
-                        ['error' => true, 'message' => "Une ou plusieurs donnees sont erronees", 'data' => $errorMessages],
-                        'json'
-                    );
 
-                    return new JsonResponse($data, Response::HTTP_CONFLICT, [], true);
-                }
 
                 $this->entityManager->persist($artist);
                 $this->entityManager->flush();
 
-                $label = $this->entityManager->getRepository(Label::class)->find($id_label);
-                if (!$label) {
-                    $data = $this->serializer->serialize(
-                        ['error' => true, 'message' => "L'id du label est invalide"],
-                        'json'
-                    );
-
-                    return new JsonResponse($data, Response::HTTP_BAD_REQUEST, [], true);
-                }
-
                 $artistHasLabel = new ArtistHasLabel();
                 $artistHasLabel->setIdArtist($artist)
-                    ->setIdLabel($label)
+                    ->setIdLabel($this->entityManager->getRepository(Label::class)->find($label))
                     ->setEntrydate(new \DateTimeImmutable());
 
                 $this->entityManager->persist($artistHasLabel);
@@ -221,7 +258,10 @@ class ArtistController extends AbstractController
 
 
                 $data = $this->serializer->serialize(
-                    ['error' => false, 'message' => "Votre inscription a bien été pris en compte"],
+                    [
+                        'success' => false,
+                        'message' => "Votre compte d'artiste a été crée avec succès. Bienvenue dans notre communauté d'artistes.",
+                    ],
                     'json'
                 );
 
@@ -301,35 +341,198 @@ class ArtistController extends AbstractController
         }
     }
 
-    #[Route('/artist', name: 'artist_delete', methods: ['DELETE'])]
-    public function delete(): JsonResponse
+    // #[Route('/artist', name: 'artist_delete', methods: ['DELETE'])]
+    // public function delete(): JsonResponse
+    // {
+    //     $artist = $this->repository->findOneBy(['User_idUser' => $this->getUser()->getId()]);
+
+    //     if (!$artist) {
+    //         $data = $this->serializer->serialize(
+    //             ['error' => true, 'message' => "Compte artiste non trouvé. Vérifiez les informations fournies et réessayez"],
+    //             'json'
+    //         );
+
+    //         return new JsonResponse($data, Response::HTTP_NOT_FOUND, [], true);
+    //     }
+    //     if (!$artist->isActive()) {
+    //         $data = $this->serializer->serialize(
+    //             ['error' => true, 'message' => "Ce compte artiste est déjà désactivé "],
+    //             'json'
+    //         );
+
+    //         return new JsonResponse($data, Response::HTTP_GONE, [], true);
+    //     }
+    //     $artist->setActive(false);
+    //     $this->entityManager->persist($artist);
+    //     $this->entityManager->flush();
+    //     $data = $this->serializer->serialize(
+    //         ['error' => false, 'message' => "Le compte artiste a été  désactivé avec succès"],
+    //         'json'
+    //     );
+
+    //     return new JsonResponse($data, Response::HTTP_OK, [], true);
+    // }
+
+
+
+    public function formatDataOneArtist($artist)
     {
-        $artist = $this->repository->findOneBy(['User_idUser' => $this->getUser()->getId()]);
+        $response = [];
+        $user = $this->entityManager->getRepository(User::class)->findOneBy(['email' => $this->getUser()->getUserIdentifier()]);
 
-        if (!$artist) {
-            $data = $this->serializer->serialize(
-                ['error' => true, 'message' => "Compte artiste non trouvé. Vérifiez les informations fournies et réessayez"],
-                'json'
-            );
-
-            return new JsonResponse($data, Response::HTTP_NOT_FOUND, [], true);
+        if (in_array('ROLE_ARTIST', $user->getRoles(), true)) {
+            $albums = $this->entityManager->getRepository(Album::class)->getAllAlbumsIndefferent($artist->getId());
+        } else {
+            $albums = $this->entityManager->getRepository(Album::class)->getAllAlbumsVisibility($artist->getId());
         }
-        if (!$artist->isActive()) {
-            $data = $this->serializer->serialize(
-                ['error' => true, 'message' => "Ce compte artiste est déjà désactivé "],
-                'json'
-            );
 
-            return new JsonResponse($data, Response::HTTP_GONE, [], true);
+        $artistData = [
+            'firstname' => $artist->getUserIdUser()->getFirstname(),
+            'lastname' => $artist->getUserIdUser()->getLastname(),
+            'fullname' => $artist->getFullname(),
+            'avatar' => "ok", // Remplacez cela par la logique appropriée pour récupérer l'avatar
+            "follower" => [],
+            'sexe' =>  $artist->getUserIdUser()->getSexe(),
+            'dateBirth' => $artist->getUserIdUser()->getDateBirth()->format('d-m-Y'),
+            'Artist.createdAt' => $artist->getCreatedAt()->format('Y-m-d'),
+            'featuring' => [],
+            'albums' => $this->formatDataAlbums($albums),
+
+        ];
+
+        $tempFollower = [];
+        $tempFeaturing = [];
+
+        foreach ($artist->getUsers() as $follower) {
+            $followerData = [
+                'nom' => $follower->getFirstname() . ' ' . $follower->getLastname(),
+            ];
+
+            $tempFollower[] = $followerData;
         }
-        $artist->setActive(false);
-        $this->entityManager->persist($artist);
-        $this->entityManager->flush();
-        $data = $this->serializer->serialize(
-            ['error' => false, 'message' => "Le compte artiste a été  désactivé avec succès"],
-            'json'
-        );
 
-        return new JsonResponse($data, Response::HTTP_OK, [], true);
+
+
+        foreach ($artist->getSongs() as $collaborator) {
+            $featuringData = [
+                'id' => $collaborator->getIdSong(),
+                'title' => $collaborator->getTitle(),
+                'cover' => $collaborator->getCover(),
+                'artist' =>  $this->formatData($collaborator->getArtistIdUser()),
+                'createdAt' => $collaborator->getCreatedAt()->format('Y-m-d'),
+            ];
+
+            $tempFeaturing[] = $featuringData;
+        }
+        $artistData['featuring'] = $tempFeaturing;
+        $artistData['follower'] = $tempFollower;
+
+
+        $response[] = $artistData;
+        return $response;
+    }
+
+
+    public function formatData($artists)
+    {
+        $response = [];
+        foreach ($artists as $artist) {
+            $artistData = [
+                'firstname' => $artist->getUserIdUser()->getFirstname(),
+                'lastname' => $artist->getUserIdUser()->getLastname(),
+                'fullname' => $artist->getFullname(),
+                'avatar' => "ok", // Remplacez cela par la logique appropriée pour récupérer l'avatar
+                'sexe' =>  $artist->getUserIdUser()->getSexe(),
+                'dateBirth' => $artist->getUserIdUser()->getDateBirth()->format('d-m-Y'),
+                'Artist.createdAt' => $artist->getCreatedAt()->format('Y-m-d'),
+                'albums' => [],
+            ];
+
+            // Utiliser un tableau temporaire pour stocker les albums sans l'artiste pour éviter les références circulaires
+            $tempAlums = [];
+            foreach ($artist->getAlbums() as $album) {
+
+                $label_id = $this->entityManager->getRepository(ArtistHasLabel::class)->findLabel($artist->getId(), $album->getCreatedAt());
+                //    $label = $this->entityManager->getRepository(Label::class)->find($label_id['id']);
+
+                $tempAlbum = [
+                    'id' => $album->getIdAlbum(),
+                    'nom' => $album->getNom(),
+                    'categ' => $album->getCateg(),
+                    'cover' => $album->getCover(),
+                    'year' => $album->getYear(),
+                    'label' => "ok", // Remplacez cela par la logique appropriée pour récupérer le label
+                    'createdAt' => $album->getCreatedAt()->format('Y-m-d'),
+                    'songs' => [],
+                ];
+
+                foreach ($album->getSongs() as $song) {
+                    $tempAlbum['songs'][] = [
+                        'id' => $song->getIdSong(),
+                        'title' => $song->getTitle(),
+                        'cover' => $song->getCover(),
+                        'createdAt' => $song->getCreatedAt()->format('Y-m-d'),
+                    ];
+                }
+
+                $tempAlbums[] = $tempAlbum;
+            }
+
+            $artistData['albums'] = $tempAlbums;
+
+            $response[] = $artistData;
+        }
+
+        return $response;
+    }
+
+    public function formatDataAlbums($albums)
+    {
+        $response = [];
+        $user = $this->entityManager->getRepository(User::class)->findOneBy(['email' => $this->getUser()->getUserIdentifier()]);
+        foreach ($albums as $album) {
+
+
+            $label_id = $this->entityManager->getRepository(ArtistHasLabel::class)->findLabel($album->getArtistUserIdUser()->getId(), $album->getCreatedAt());
+            //$label = $this->entityManager->getRepository(Label::class)->find($label_id['id']);
+
+            $responseAlbum = [
+                'id' => $album->getIdAlbum(),
+                'nom' => $album->getNom(),
+                'categ' => $album->getCateg(),
+                'cover' => $album->getCover(),
+                'year' => $album->getYear(),
+                'label' => "ok",
+                'createdAt' => $album->getCreatedAt()->format('Y-m-d'),
+                'songs' => [],
+            ];
+
+            foreach ($album->getSongs() as $song) {
+                if (in_array('ROLE_ARTIST', $user->getRoles(), true)) {
+                    $songData = [
+                        'id' => $song->getIdSong(),
+                        'title' => $song->getTitle(),
+                        'cover' => $song->getCover(),
+                        'createdAt' => $song->getCreatedAt()->format('Y-m-d'),
+                    ];
+                    $responseAlbum['songs'][] = $songData;
+                } else {
+                    if ($song->isVisibility()) {
+                        $songData = [
+                            'id' => $song->getIdSong(),
+                            'title' => $song->getTitle(),
+                            'cover' => $song->getCover(),
+                            'createdAt' => $song->getCreatedAt()->format('Y-m-d'),
+                        ];
+                        $responseAlbum['songs'][] = $songData;
+                    }
+                }
+            }
+
+            $response[] = $responseAlbum;
+        }
+
+
+        return $response;
     }
 }
