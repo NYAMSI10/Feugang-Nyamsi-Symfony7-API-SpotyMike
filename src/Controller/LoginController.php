@@ -49,7 +49,7 @@ class LoginController extends AbstractController
 
         $encodedEmail = urlencode($email);
 
-        if (!$email || !$password) {
+        if (!isset($email) || !isset($password)) {
             $data = $this->serializer->serialize(
                 ['error' => true, 'message' => "Email/password manquants."],
                 'json'
@@ -140,7 +140,7 @@ class LoginController extends AbstractController
         $artist = (object)[];
         if ($user->getArtist()) {
             $fullname = $user->getArtist()->getFullname();
-            $artist = $this->entityManager->getRepository(Artist::class)->searchArtistAndAlbumAndSong($fullname, $check_visibility);
+            $artist = $this->entityManager->getRepository(Artist::class)->findByArtistAndAlbumAndSong($fullname, $check_visibility);
         }
         $user_data = [
             "firstname" => $user->getFirstname(),
