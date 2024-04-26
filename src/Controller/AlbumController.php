@@ -140,9 +140,9 @@ class AlbumController extends AbstractController
 
         $album_data = null;
         if (!in_array('ROLE_ARTIST', $user->getRoles(), true))
-            $album_data = $this->repository->findOneBy(['id' => $id, 'visibility' => true, 'active' => true]);
+            $album_data = $this->repository->findOneBy(['idAlbum' => $id, 'visibility' => true, 'active' => true]);
         else
-            $album_data = $this->repository->findOneBy(['id' => $id, 'active' => true]);
+            $album_data = $this->repository->findOneBy(['idAlbum' => $id, 'active' => true]);
 
 
         if (!$album_data) {
@@ -153,10 +153,63 @@ class AlbumController extends AbstractController
             return new JsonResponse($data, Response::HTTP_NOT_FOUND, [], true);
         }
 
-        $album = $this->formatData($album_data);
+        $artist = [
+            'firstname' => $album_data->getArtistUserIdUser()->getUserIdUser()->getFirstname(),
+            'lastname' => $album_data->getArtistUserIdUser()->getUserIdUser()->getLastname(),
+            'fullname' => $album_data->getArtistUserIdUser()->getFullname(),
+            //'avatar' => $collaborator->getFullname(),
+            'followers' => count($album_data->getArtistUserIdUser()->getUserIdUser()->getFollowers()),
+            'sexe' =>  $album_data->getArtistUserIdUser()->getUserIdUser()->getSexe(),
+            'dateBirth' => $album_data->getArtistUserIdUser()->getUserIdUser()->getDateBirth()->format('d-m-Y'),
+            'Artist.createdAt' => $album_data->getArtistUserIdUser()->getCreatedAt()->format('Y-m-d')
+        ];
+
+        $label_id = $this->entityManager->getRepository(ArtistHasLabel::class)->findLabel($album_data->getArtistUserIdUser()->getId(), $album_data->getCreatedAt());
+        if ($label_id['id'])
+            $label = $this->entityManager->getRepository(Label::class)->find($label_id['id']);
+        else
+            $label = "";
+
+        $responseAlbum = [
+            'id' => $album_data->getId(),
+            'nom' => $album_data->getNom(),
+            'categ' => $album_data->getCateg(),
+            'cover' => $album_data->getCover(),
+            'year' => $album_data->getYear(),
+            'label' => $label->getNom(),
+            'createdAt' => $album_data->getCreatedAt()->format('Y-m-d'),
+            'artist' => $artist,
+            'songs' => [],
+        ];
+
+        foreach ($album_data->getSongs() as $song) {
+            $songData = [
+                'id' => $song->getIdSong(),
+                'title' => $song->getTitle(),
+                'cover' => $song->getCover(),
+                'createdAt' => $song->getCreatedAt()->format('Y-m-d'),
+                'featuring' => []
+            ];
+
+            // Ajoutez les artistes en collaboration pour chaque chanson
+            foreach ($song->getArtistIdUser() as $collaborator) {
+                $songData['featuring'][] = [
+                    'firstname' => $collaborator->getUserIdUser()->getFirstname(),
+                    'lastname' => $collaborator->getUserIdUser()->getLastname(),
+                    'fullname' => $collaborator->getFullname(),
+                    //'avatar' => $collaborator->getFullname(),
+                    'sexe' =>  $collaborator->getUserIdUser()->getSexe(),
+                    'dateBirth' => $collaborator->getUserIdUser()->getDateBirth()->format('d-m-Y'),
+                    'Artist.createdAt' => $collaborator->getCreatedAt()->format('Y-m-d')
+                ];
+            }
+
+            $responseAlbum['songs'][] = $songData;
+        }
 
 
-        $jsonAlbumList = $this->serializer->serialize(["error" => false, "album" => $album], 'json');
+
+        $jsonAlbumList = $this->serializer->serialize(["error" => false, "album" => $responseAlbum], 'json');
 
         return new JsonResponse($jsonAlbumList, Response::HTTP_OK, [], true);
     }
@@ -273,94 +326,35 @@ class AlbumController extends AbstractController
 
     public function formatData($albums)
     {
-        $response = null;
-        dd($albums);
-        if (is_array($albums)) {
-            foreach ($albums as $album) {
-                $artist = [
-                    'firstname' => $album->getArtistUserIdUser()->getUserIdUser()->getFirstname(),
-                    'lastname' => $album->getArtistUserIdUser()->getUserIdUser()->getLastname(),
-                    'fullname' => $album->getArtistUserIdUser()->getFullname(),
-                    //'avatar' => $collaborator->getFullname(),
-                    'followers' => count($album->getArtistUserIdUser()->getUserIdUser()->getFollowers()),
-                    'sexe' =>  $album->getArtistUserIdUser()->getUserIdUser()->getSexe(),
-                    'dateBirth' => $album->getArtistUserIdUser()->getUserIdUser()->getDateBirth()->format('d-m-Y'),
-                    'Artist.createdAt' => $album->getArtistUserIdUser()->getCreatedAt()->format('Y-m-d')
-                ];
-
-                $label_id = $this->entityManager->getRepository(ArtistHasLabel::class)->findLabel($album->getArtistUserIdUser()->getId(), $album->getCreatedAt());
-                $label = $this->entityManager->getRepository(Label::class)->find($label_id['id']);
-                $responseAlbum = [
-                    'id' => $album->getId(),
-                    'nom' => $album->getNom(),
-                    'categ' => $album->getCateg(),
-                    'cover' => $album->getCover(),
-                    'year' => $album->getYear(),
-                    'label' => $label->getNom(),
-                    'createdAt' => $album->getCreatedAt()->format('Y-m-d'),
-                    'artist' => $artist,
-                    'songs' => [],
-                ];
-
-                foreach ($album->getSongs() as $song) {
-                    $songData = [
-                        'id' => $song->getIdSong(),
-                        'title' => $song->getTitle(),
-                        'cover' => $song->getCover(),
-                        'createdAt' => $song->getCreatedAt()->format('Y-m-d'),
-                        'featuring' => []
-                    ];
-
-                    // Ajoutez les artistes en collaboration pour chaque chanson
-                    foreach ($song->getArtistIdUser() as $collaborator) {
-                        $songData['featuring'][] = [
-                            'firstname' => $collaborator->getUserIdUser()->getFirstname(),
-                            'lastname' => $collaborator->getUserIdUser()->getLastname(),
-                            'fullname' => $collaborator->getFullname(),
-                            //'avatar' => $collaborator->getFullname(),
-                            'sexe' =>  $collaborator->getUserIdUser()->getSexe(),
-                            'dateBirth' => $collaborator->getUserIdUser()->getDateBirth()->format('d-m-Y'),
-                            'Artist.createdAt' => $collaborator->getCreatedAt()->format('Y-m-d')
-                        ];
-                    }
-
-                    $responseAlbum['songs'][] = $songData;
-                }
-
-                $response[] = $responseAlbum;
-            }
-        } else {
-            dd($albums);
+        $response = [];
+        //dd($albums);
+        foreach ($albums as $album) {
             $artist = [
-                'firstname' => $albums->getArtistUserIdUser()->getUserIdUser()->getFirstname(),
-                'lastname' => $albums->getArtistUserIdUser()->getUserIdUser()->getLastname(),
-                'fullname' => $albums->getArtistUserIdUser()->getFullname(),
+                'firstname' => $album->getArtistUserIdUser()->getUserIdUser()->getFirstname(),
+                'lastname' => $album->getArtistUserIdUser()->getUserIdUser()->getLastname(),
+                'fullname' => $album->getArtistUserIdUser()->getFullname(),
                 //'avatar' => $collaborator->getFullname(),
-                'followers' => count($albums->getArtistUserIdUser()->getUserIdUser()->getFollowers()),
-                'sexe' =>  $albums->getArtistUserIdUser()->getUserIdUser()->getSexe(),
-                'dateBirth' => $albums->getArtistUserIdUser()->getUserIdUser()->getDateBirth()->format('d-m-Y'),
-                'Artist.createdAt' => $albums->getArtistUserIdUser()->getCreatedAt()->format('Y-m-d')
+                'followers' => count($album->getArtistUserIdUser()->getUserIdUser()->getFollowers()),
+                'sexe' =>  $album->getArtistUserIdUser()->getUserIdUser()->getSexe(),
+                'dateBirth' => $album->getArtistUserIdUser()->getUserIdUser()->getDateBirth()->format('d-m-Y'),
+                'Artist.createdAt' => $album->getArtistUserIdUser()->getCreatedAt()->format('Y-m-d')
             ];
 
-            $label_id = $this->entityManager->getRepository(ArtistHasLabel::class)->findLabel($albums->getArtistUserIdUser()->getId(), $albums->getCreatedAt());
-            if ($label_id['id'])
-                $label = $this->entityManager->getRepository(Label::class)->find($label_id['id']);
-            else
-                $label = "";
-
+            $label_id = $this->entityManager->getRepository(ArtistHasLabel::class)->findLabel($album->getArtistUserIdUser()->getId(), $album->getCreatedAt());
+            $label = $this->entityManager->getRepository(Label::class)->find($label_id['id']);
             $responseAlbum = [
-                'id' => $albums->getId(),
-                'nom' => $albums->getNom(),
-                'categ' => $albums->getCateg(),
-                'cover' => $albums->getCover(),
-                'year' => $albums->getYear(),
+                'id' => $album->getId(),
+                'nom' => $album->getNom(),
+                'categ' => $album->getCateg(),
+                'cover' => $album->getCover(),
+                'year' => $album->getYear(),
                 'label' => $label->getNom(),
-                'createdAt' => $albums->getCreatedAt()->format('Y-m-d'),
+                'createdAt' => $album->getCreatedAt()->format('Y-m-d'),
                 'artist' => $artist,
                 'songs' => [],
             ];
 
-            foreach ($albums->getSongs() as $song) {
+            foreach ($album->getSongs() as $song) {
                 $songData = [
                     'id' => $song->getIdSong(),
                     'title' => $song->getTitle(),
@@ -385,7 +379,7 @@ class AlbumController extends AbstractController
                 $responseAlbum['songs'][] = $songData;
             }
 
-            $response = $responseAlbum;
+            $response[] = $responseAlbum;
         }
 
 
