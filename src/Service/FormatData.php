@@ -231,4 +231,66 @@ class FormatData
 
         return $response;
     }
+
+    public function formatDataAlbumsWithFeaturings($albums,$user) {
+        $response = [];
+        foreach ($albums as $album) {
+            $artist = [
+                'firstname' => $album->getArtistUserIdUser()->getUserIdUser()->getFirstname(),
+                'lastname' => $album->getArtistUserIdUser()->getUserIdUser()->getLastname(),
+                'fullname' => $album->getArtistUserIdUser()->getFullname(),
+                'avatar' => $album->getArtistUserIdUser()->getAvatar(),
+                'followers' => count($album->getArtistUserIdUser()->getUserIdUser()->getFollowers()),
+                'sexe' =>  $album->getArtistUserIdUser()->getUserIdUser()->getSexe(),
+                'dateBirth' => $album->getArtistUserIdUser()->getUserIdUser()->getDateBirth()->format('d-m-Y'),
+                'createdAt' => $album->getArtistUserIdUser()->getCreatedAt()->format('Y-m-d')
+            ];
+
+            $label_id = $this->em->getRepository(ArtistHasLabel::class)->findLabel($album->getArtistUserIdUser()->getId(), $album->getCreatedAt());
+
+            $label = $this->em->getRepository(Label::class)->find($label_id['id']);
+
+            $responseAlbum = [
+                'id' => $album->getIdAlbum(),
+                'nom' => $album->getNom(),
+                'categ' => $album->getCateg(),
+                'cover' => $album->getCover(),
+                'year' => $album->getYear(),
+                'label' => $label->getNom(),
+                'createdAt' => $album->getCreatedAt()->format('Y-m-d'),
+                'artist' => $artist,
+                'songs' => [],
+            ];
+
+            foreach ($album->getSongs() as $song) {
+                $songData = [
+                    'id' => $song->getIdSong(),
+                    'title' => $song->getTitle(),
+                    'cover' => $song->getCover(),
+                    'createdAt' => $song->getCreatedAt()->format('Y-m-d'),
+                    'featuring' => []
+                ];
+
+                // Ajoutez les artistes en collaboration pour chaque chanson
+                foreach ($song->getArtistIdUser() as $collaborator) {
+                    $songData['featuring'][] = [
+                        'firstname' => $collaborator->getUserIdUser()->getFirstname(),
+                        'lastname' => $collaborator->getUserIdUser()->getLastname(),
+                        'fullname' => $collaborator->getFullname(),
+                        'avatar' => $collaborator->getAvatar(),
+                        'sexe' =>  $collaborator->getUserIdUser()->getSexe(),
+                        'dateBirth' => $collaborator->getUserIdUser()->getDateBirth()->format('d-m-Y'),
+                        'Artist.createdAt' => $collaborator->getCreatedAt()->format('Y-m-d')
+                    ];
+                }
+
+                $responseAlbum['songs'][] = $songData;
+            }
+
+            $response[] = $responseAlbum;
+        }
+
+
+        return $response;
+    }
 }

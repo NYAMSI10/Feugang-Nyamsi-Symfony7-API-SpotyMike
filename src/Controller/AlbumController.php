@@ -9,6 +9,7 @@ use App\Entity\Label;
 use App\Entity\User;
 use Doctrine\ORM\EntityManager;
 use App\Repository\UserRepository;
+use App\Service\FormatData;
 use App\Service\GenerateId;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -32,7 +33,7 @@ class AlbumController extends AbstractController
     private $serializer;
     private $validator;
 
-    public function __construct(EntityManagerInterface $entityManager, SerializerInterface $serializer, ValidatorInterface $validator, private readonly ParameterBagInterface $parameterBag)
+    public function __construct(EntityManagerInterface $entityManager, SerializerInterface $serializer, ValidatorInterface $validator, private readonly ParameterBagInterface $parameterBag,private readonly FormatData $formatData)
     {
         $this->entityManager = $entityManager;
         $this->repository = $entityManager->getRepository(Album::class);
@@ -72,7 +73,7 @@ class AlbumController extends AbstractController
             ], Response::HTTP_NOT_FOUND);
         }
 
-        $albums_data = $this->formatData($albums);
+        $albums_data = $this->formatData->formatDataAlbumsWithFeaturings($albums,$this->getUser());
         return $this->json([
             'error' => false,
             'albums' => $albums_data,
@@ -137,7 +138,7 @@ class AlbumController extends AbstractController
             ], Response::HTTP_NOT_FOUND);
         }
 
-        $albums_data = $this->formatData($albums);
+        $albums_data = $this->formatData->formatDataAlbumsWithFeaturings($albums,$this->getUser());
         return $this->json([
             'error' => false,
             'albums' => $albums_data,
@@ -433,7 +434,7 @@ class AlbumController extends AbstractController
     // }
 
 
-    public function formatData($albums)
+    /*public function formatData($albums)
     {
         $response = [];
         foreach ($albums as $album) {
@@ -445,7 +446,7 @@ class AlbumController extends AbstractController
                 'followers' => count($album->getArtistUserIdUser()->getUserIdUser()->getFollowers()),
                 'sexe' =>  $album->getArtistUserIdUser()->getUserIdUser()->getSexe(),
                 'dateBirth' => $album->getArtistUserIdUser()->getUserIdUser()->getDateBirth()->format('d-m-Y'),
-                'Artist.createdAt' => $album->getArtistUserIdUser()->getCreatedAt()->format('Y-m-d')
+                'createdAt' => $album->getArtistUserIdUser()->getCreatedAt()->format('Y-m-d')
             ];
 
             $label_id = $this->entityManager->getRepository(ArtistHasLabel::class)->findLabel($album->getArtistUserIdUser()->getId(), $album->getCreatedAt());
@@ -494,5 +495,5 @@ class AlbumController extends AbstractController
 
 
         return $response;
-    }
+    }*/
 }
