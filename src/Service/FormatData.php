@@ -16,58 +16,58 @@ class FormatData
     ) {
     }
 
-    public function formatDataArtist($artists)
+    public function formatDataArtist($artists,$user)
     {
         //dd($artists);
         $response = [];
-        if(is_array($artists)) {
-            foreach ($artists as $artist) {
-            
-                $artistData = [
-                    'firstname' => $artist->getUserIdUser()->getFirstname(),
-                    'lastname' => $artist->getUserIdUser()->getLastname(),
-                    'fullname' => $artist->getFullname(),
-                    'avatar' => $artist->getAvatar(),
-                    'sexe' =>  $artist->getUserIdUser()->getSexe(),
-                    'dateBirth' => $artist->getUserIdUser()->getDateBirth()->format('d-m-Y'),
-                    'Artist.createdAt' => $artist->getCreatedAt()->format('Y-m-d'),
-                    'albums' => [],
+        foreach ($artists as $artist) {
+        
+            $artistData = [
+                'firstname' => $artist->getUserIdUser()->getFirstname(),
+                'lastname' => $artist->getUserIdUser()->getLastname(),
+                'fullname' => $artist->getFullname(),
+                'avatar' => $artist->getAvatar(),
+                'sexe' =>  $artist->getUserIdUser()->getSexe(),
+                'dateBirth' => $artist->getUserIdUser()->getDateBirth()->format('d-m-Y'),
+                'Artist.createdAt' => $artist->getCreatedAt()->format('Y-m-d'),
+                'albums' => [],
+            ];
+
+            $artistData['albums'] = $this->formatDataAlbums($artist->getAlbums(),$user);
+            // Utiliser un tableau temporaire pour stocker les albums sans l'artiste pour éviter les références circulaires
+           /* $tempAlums = [];
+
+            foreach ($artist->getAlbums() as $album) {
+
+                $label_id = $this->em->getRepository(ArtistHasLabel::class)->findLabel($artist->getId(), $album->getCreatedAt());
+                $label = $this->em->getRepository(Label::class)->find($label_id['id']);
+
+                $tempAlbum = [
+                    'id' => $album->getIdAlbum(),
+                    'nom' => $album->getNom(),
+                    'categ' => $album->getCateg(),
+                    'cover' => $album->getCover(),
+                    'year' => $album->getYear(),
+                    'label' => $label->getNom(), // Remplacez cela par la logique appropriée pour récupérer le label
+                    'createdAt' => $album->getCreatedAt()->format('Y-m-d'),
+                    'songs' => [],
                 ];
-    
-                // Utiliser un tableau temporaire pour stocker les albums sans l'artiste pour éviter les références circulaires
-                $tempAlums = [];
-                foreach ($artist->getAlbums() as $album) {
-    
-                    $label_id = $this->em->getRepository(ArtistHasLabel::class)->findLabel($artist->getId(), $album->getCreatedAt());
-                    $label = $this->em->getRepository(Label::class)->find($label_id['id']);
-    
-                    $tempAlbum = [
-                        'id' => $album->getIdAlbum(),
-                        'nom' => $album->getNom(),
-                        'categ' => $album->getCateg(),
-                        'cover' => $album->getCover(),
-                        'year' => $album->getYear(),
-                        'label' => $label->getNom(), // Remplacez cela par la logique appropriée pour récupérer le label
-                        'createdAt' => $album->getCreatedAt()->format('Y-m-d'),
-                        'songs' => [],
+
+                foreach ($album->getSongs() as $song) {
+                    $tempAlbum['songs'][] = [
+                        'id' => $song->getIdSong(),
+                        'title' => $song->getTitle(),
+                        'cover' => $song->getCover(),
+                        'createdAt' => $song->getCreatedAt()->format('Y-m-d'),
                     ];
-    
-                    foreach ($album->getSongs() as $song) {
-                        $tempAlbum['songs'][] = [
-                            'id' => $song->getIdSong(),
-                            'title' => $song->getTitle(),
-                            'cover' => $song->getCover(),
-                            'createdAt' => $song->getCreatedAt()->format('Y-m-d'),
-                        ];
-                    }
-    
-                    $tempAlbums[] = $tempAlbum;
                 }
-    
-                $artistData['albums'] = $tempAlbums;
-    
-                $response[] = $artistData;
+
+                $tempAlbums[] = $tempAlbum;
             }
+
+            $artistData['albums'] = $tempAlbums;*/
+
+            $response[] = $artistData;
         }
 
         return $response;

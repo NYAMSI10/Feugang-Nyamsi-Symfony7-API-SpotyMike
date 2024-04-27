@@ -4,6 +4,7 @@ namespace App\Repository;
 
 use App\Entity\Artist;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\ORM\Tools\Pagination\Paginator;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
@@ -264,4 +265,18 @@ class ArtistRepository extends ServiceEntityRepository
         else
             return null;
     }
+
+    public function getAllArtist($current_page, $limit) {
+        $queryBuilder = $this
+        ->createQueryBuilder('a')
+        ->setFirstResult(($current_page - 1) * $limit)
+        ->setMaxResults($limit);
+    
+        $query = $queryBuilder->getQuery();
+		
+		$paginator = new Paginator($query, true);
+		return $paginator;
+    }
+
+
 }

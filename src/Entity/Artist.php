@@ -64,6 +64,9 @@ class Artist
     #[ORM\Column(length: 150, nullable: true)]
     private ?string $avatar = null;
 
+    #[ORM\Column(length: 90, nullable: true)]
+    private ?string $idArtist = null;
+
 
 
 
@@ -284,6 +287,18 @@ class Artist
     public function setAvatar(?string $avatar): static
     {
         $this->avatar = $avatar;
+
+        return $this;
+    }
+
+    public function getIdArtist(): ?string
+    {
+        return $this->idArtist;
+    }
+
+    public function setIdArtist(string $idArtist): static
+    {
+        $this->idArtist = $idArtist;
 
         return $this;
     }
