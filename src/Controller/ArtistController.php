@@ -144,9 +144,7 @@ class ArtistController extends AbstractController
                 $explodeData = explode(",", $avatar);
                 $fileType = explode('/', $explodeData[0])[1];
                 $formatList = ["png", "jpeg"];
-                if (
-                    !in_array(explode(";", $fileType)[0], $formatList, true)
-                ) {
+                if (!in_array(explode(";", $fileType)[0], $formatList, true)) {
                     $data = $this->serializer->serialize(
                         ['error' => true, 'message' => "Erreur sur le format du fichier qui n'est pas pris en charge. "],
                         'json'

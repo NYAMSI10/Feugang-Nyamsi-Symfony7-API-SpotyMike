@@ -7,11 +7,12 @@ use App\Entity\ArtistHasLabel;
 use App\Entity\Label;
 use App\Entity\User;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 
 class FormatData
 {
     public function __construct(
-        protected EntityManagerInterface $em
+        protected EntityManagerInterface $em, private readonly ParameterBagInterface $parameterBag
         /*, private readonly ContainerInterface $container*/
     ) {
     }
@@ -114,7 +115,7 @@ class FormatData
             $featuringData = [
                 'id' => $collaborator->getIdSong(),
                 'title' => $collaborator->getTitle(),
-                'cover' => $collaborator->getCover(),
+                'cover' => $this->parameterBag->get('SongDir') . '/'.$collaborator->getCover(),
                 'artist' =>  $this->formatData($collaborator->getArtistIdUser()),
                 'createdAt' => $collaborator->getCreatedAt()->format('Y-m-d'),
             ];
@@ -155,7 +156,7 @@ class FormatData
                     'id' => $album->getIdAlbum(),
                     'nom' => $album->getNom(),
                     'categ' => $album->getCateg(),
-                    'cover' => $album->getCover(),
+                    'cover' => $this->parameterBag->get('AlbumImgDir') . '/'.$album->getCover(),
                     'year' => $album->getYear(),
                     'label' => $label->getNom(), // Remplacez cela par la logique appropriée pour récupérer le label
                     'createdAt' => $album->getCreatedAt()->format('Y-m-d'),
@@ -166,7 +167,7 @@ class FormatData
                     $tempAlbum['songs'][] = [
                         'id' => $song->getIdSong(),
                         'title' => $song->getTitle(),
-                        'cover' => $song->getCover(),
+                        'cover' => $this->parameterBag->get('SongDir') . '/'.$song->getCover(),
                         'createdAt' => $song->getCreatedAt()->format('Y-m-d'),
                     ];
                 }
@@ -196,7 +197,7 @@ class FormatData
                 'id' => $album->getIdAlbum(),
                 'nom' => $album->getNom(),
                 'categ' => $album->getCateg(),
-                'cover' => $album->getCover(),
+                'cover' => $this->parameterBag->get('AlbumImgDir') . '/'.$album->getCover(),
                 'year' => $album->getYear(),
                 'label' => $label->getNom(),
                 'createdAt' => $album->getCreatedAt()->format('Y-m-d'),
@@ -208,7 +209,7 @@ class FormatData
                     $songData = [
                         'id' => $song->getIdSong(),
                         'title' => $song->getTitle(),
-                        'cover' => $song->getCover(),
+                        'cover' => $this->parameterBag->get('SongDir') . '/'.$song->getCover(),
                         'createdAt' => $song->getCreatedAt()->format('Y-m-d'),
                     ];
                     $responseAlbum['songs'][] = $songData;
@@ -217,7 +218,7 @@ class FormatData
                         $songData = [
                             'id' => $song->getIdSong(),
                             'title' => $song->getTitle(),
-                            'cover' => $song->getCover(),
+                            'cover' => $this->parameterBag->get('SongDir') . '/'.$song->getCover(),
                             'createdAt' => $song->getCreatedAt()->format('Y-m-d'),
                         ];
                         $responseAlbum['songs'][] = $songData;
@@ -254,7 +255,7 @@ class FormatData
                 'id' => $album->getIdAlbum(),
                 'nom' => $album->getNom(),
                 'categ' => $album->getCateg(),
-                'cover' => $album->getCover(),
+                'cover' => $this->parameterBag->get('AlbumImgDir') . '/'.$album->getCover(),
                 'year' => $album->getYear(),
                 'label' => $label->getNom(),
                 'createdAt' => $album->getCreatedAt()->format('Y-m-d'),
@@ -266,7 +267,7 @@ class FormatData
                 $songData = [
                     'id' => $song->getIdSong(),
                     'title' => $song->getTitle(),
-                    'cover' => $song->getCover(),
+                    'cover' => $this->parameterBag->get('SongDir') . '/'.$song->getCover(),
                     'createdAt' => $song->getCreatedAt()->format('Y-m-d'),
                     'featuring' => []
                 ];
