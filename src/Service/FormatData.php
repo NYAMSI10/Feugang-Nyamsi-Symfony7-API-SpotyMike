@@ -7,11 +7,12 @@ use App\Entity\ArtistHasLabel;
 use App\Entity\Label;
 use App\Entity\User;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 
 class FormatData
 {
     public function __construct(
-        protected EntityManagerInterface $em
+        protected EntityManagerInterface $em, private readonly ParameterBagInterface $parameterBag
         /*, private readonly ContainerInterface $container*/
     ) {
     }
@@ -26,7 +27,7 @@ class FormatData
                 'firstname' => $artist->getUserIdUser()->getFirstname(),
                 'lastname' => $artist->getUserIdUser()->getLastname(),
                 'fullname' => $artist->getFullname(),
-                'avatar' => $artist->getAvatar(),
+                'avatar' => $this->parameterBag->get('ArtistImgDir') . '/'.$artist->getAvatar(),
                 'sexe' =>  $artist->getUserIdUser()->getSexe(),
                 'dateBirth' => $artist->getUserIdUser()->getDateBirth()->format('d-m-Y'),
                 'Artist.createdAt' => $artist->getCreatedAt()->format('Y-m-d'),
@@ -88,7 +89,7 @@ class FormatData
             'firstname' => $artist->getUserIdUser()->getFirstname(),
             'lastname' => $artist->getUserIdUser()->getLastname(),
             'fullname' => $artist->getFullname(),
-            'avatar' => $artist->getAvatar(),
+            'avatar' => $this->parameterBag->get('ArtistImgDir') . '/'.$artist->getAvatar(),
             "follower" => [],
             'sexe' =>  $artist->getUserIdUser()->getSexe(),
             'dateBirth' => $artist->getUserIdUser()->getDateBirth()->format('d-m-Y'),
@@ -114,7 +115,7 @@ class FormatData
             $featuringData = [
                 'id' => $collaborator->getIdSong(),
                 'title' => $collaborator->getTitle(),
-                'cover' => $collaborator->getCover(),
+                'cover' => $this->parameterBag->get('SongDir') . '/'.$collaborator->getCover(),
                 'artist' =>  $this->formatData($collaborator->getArtistIdUser()),
                 'createdAt' => $collaborator->getCreatedAt()->format('Y-m-d'),
             ];
@@ -137,7 +138,7 @@ class FormatData
                 'firstname' => $artist->getUserIdUser()->getFirstname(),
                 'lastname' => $artist->getUserIdUser()->getLastname(),
                 'fullname' => $artist->getFullname(),
-                'avatar' => $artist->getAvatar(),
+                'avatar' => $this->parameterBag->get('ArtistImgDir') . '/'.$artist->getAvatar(),
                 'sexe' =>  $artist->getUserIdUser()->getSexe(),
                 'dateBirth' => $artist->getUserIdUser()->getDateBirth()->format('d-m-Y'),
                 'Artist.createdAt' => $artist->getCreatedAt()->format('Y-m-d'),
@@ -155,7 +156,7 @@ class FormatData
                     'id' => $album->getIdAlbum(),
                     'nom' => $album->getNom(),
                     'categ' => $album->getCateg(),
-                    'cover' => $album->getCover(),
+                    'cover' => $this->parameterBag->get('AlbumImgDir') . '/'.$album->getCover(),
                     'year' => $album->getYear(),
                     'label' => $label->getNom(), // Remplacez cela par la logique appropriée pour récupérer le label
                     'createdAt' => $album->getCreatedAt()->format('Y-m-d'),
@@ -166,7 +167,7 @@ class FormatData
                     $tempAlbum['songs'][] = [
                         'id' => $song->getIdSong(),
                         'title' => $song->getTitle(),
-                        'cover' => $song->getCover(),
+                        'cover' => $this->parameterBag->get('SongDir') . '/'.$song->getCover(),
                         'createdAt' => $song->getCreatedAt()->format('Y-m-d'),
                     ];
                 }
@@ -196,7 +197,7 @@ class FormatData
                 'id' => $album->getIdAlbum(),
                 'nom' => $album->getNom(),
                 'categ' => $album->getCateg(),
-                'cover' => $album->getCover(),
+                'cover' => $this->parameterBag->get('AlbumImgDir') . '/'.$album->getCover(),
                 'year' => $album->getYear(),
                 'label' => $label->getNom(),
                 'createdAt' => $album->getCreatedAt()->format('Y-m-d'),
@@ -208,7 +209,7 @@ class FormatData
                     $songData = [
                         'id' => $song->getIdSong(),
                         'title' => $song->getTitle(),
-                        'cover' => $song->getCover(),
+                        'cover' => $this->parameterBag->get('SongDir') . '/'.$song->getCover(),
                         'createdAt' => $song->getCreatedAt()->format('Y-m-d'),
                     ];
                     $responseAlbum['songs'][] = $songData;
@@ -217,7 +218,7 @@ class FormatData
                         $songData = [
                             'id' => $song->getIdSong(),
                             'title' => $song->getTitle(),
-                            'cover' => $song->getCover(),
+                            'cover' => $this->parameterBag->get('SongDir') . '/'.$song->getCover(),
                             'createdAt' => $song->getCreatedAt()->format('Y-m-d'),
                         ];
                         $responseAlbum['songs'][] = $songData;
@@ -239,7 +240,7 @@ class FormatData
                 'firstname' => $album->getArtistUserIdUser()->getUserIdUser()->getFirstname(),
                 'lastname' => $album->getArtistUserIdUser()->getUserIdUser()->getLastname(),
                 'fullname' => $album->getArtistUserIdUser()->getFullname(),
-                'avatar' => $album->getArtistUserIdUser()->getAvatar(),
+                'avatar' => $this->parameterBag->get('ArtistImgDir') . '/'.$album->getArtistUserIdUser()->getAvatar(),
                 'followers' => count($album->getArtistUserIdUser()->getUserIdUser()->getFollowers()),
                 'sexe' =>  $album->getArtistUserIdUser()->getUserIdUser()->getSexe(),
                 'dateBirth' => $album->getArtistUserIdUser()->getUserIdUser()->getDateBirth()->format('d-m-Y'),
@@ -254,7 +255,7 @@ class FormatData
                 'id' => $album->getIdAlbum(),
                 'nom' => $album->getNom(),
                 'categ' => $album->getCateg(),
-                'cover' => $album->getCover(),
+                'cover' => $this->parameterBag->get('AlbumImgDir') . '/'.$album->getCover(),
                 'year' => $album->getYear(),
                 'label' => $label->getNom(),
                 'createdAt' => $album->getCreatedAt()->format('Y-m-d'),
@@ -266,7 +267,7 @@ class FormatData
                 $songData = [
                     'id' => $song->getIdSong(),
                     'title' => $song->getTitle(),
-                    'cover' => $song->getCover(),
+                    'cover' => $this->parameterBag->get('SongDir') . '/'.$song->getCover(),
                     'createdAt' => $song->getCreatedAt()->format('Y-m-d'),
                     'featuring' => []
                 ];
@@ -277,7 +278,7 @@ class FormatData
                         'firstname' => $collaborator->getUserIdUser()->getFirstname(),
                         'lastname' => $collaborator->getUserIdUser()->getLastname(),
                         'fullname' => $collaborator->getFullname(),
-                        'avatar' => $collaborator->getAvatar(),
+                        'avatar' => $this->parameterBag->get('ArtistImgDir') . '/'.$collaborator->getAvatar(),
                         'sexe' =>  $collaborator->getUserIdUser()->getSexe(),
                         'dateBirth' => $collaborator->getUserIdUser()->getDateBirth()->format('d-m-Y'),
                         'Artist.createdAt' => $collaborator->getCreatedAt()->format('Y-m-d')

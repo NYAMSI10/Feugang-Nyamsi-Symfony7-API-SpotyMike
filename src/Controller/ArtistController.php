@@ -119,14 +119,13 @@ class ArtistController extends AbstractController
     public function new(Request $request, GenerateId $generateId): JsonResponse
     {
         $user = $this->entityManager->getRepository(User::class)->findOneBy(['email' => $this->getUser()->getUserIdentifier()]);
-        $fullname = $request->get('fullname');
-        $id_label = $request->get('label');
-        $description = $request->get('description');
-        $avatar = $request->get('avatar');
-
 
         if (!in_array('ROLE_ARTIST', $user->getRoles(), true)) {
-
+            $fullname = $request->get('fullname');
+            $id_label = $request->get('label');
+            $description = $request->get('description');
+            $avatar = $request->get('avatar');
+            $name = null;
             if ($avatar) {
                 // Cela sépare la chaîne en utilisant '/' et récupère le deuxième élément (l'extension)
                 $image_decodee = base64_decode($avatar);
@@ -144,9 +143,7 @@ class ArtistController extends AbstractController
                 $explodeData = explode(",", $avatar);
                 $fileType = explode('/', $explodeData[0])[1];
                 $formatList = ["png", "jpeg"];
-                if (
-                    !in_array(explode(";", $fileType)[0], $formatList, true)
-                ) {
+                if (!in_array(explode(";", $fileType)[0], $formatList, true)) {
                     $data = $this->serializer->serialize(
                         ['error' => true, 'message' => "Erreur sur le format du fichier qui n'est pas pris en charge. "],
                         'json'
@@ -224,16 +221,13 @@ class ArtistController extends AbstractController
             }
 
             try {
-                $user->setRoles(["ROLE_ARTIST", "ROLE_USER"]);
-                $this->entityManager->persist($user);
-                $this->entityManager->flush();
-
                 $artist = new Artist();
                 $artist->setIdArtist($generateId->randId());
                 $artist->setUserIdUser($user);
                 $artist->setFullname($fullname);
                 // $artist->setLabel($label);
-                $artist->setAvatar($name);
+                if($name)
+                    $artist->setAvatar($name);
                 $artist->setDescription(isset($description) ? $description : '');
 
 
@@ -248,11 +242,14 @@ class ArtistController extends AbstractController
                 $this->entityManager->persist($artistHasLabel);
                 $this->entityManager->flush();
 
+                $user->setRoles(["ROLE_ARTIST", "ROLE_USER"]);
+                $this->entityManager->persist($user);
+                $this->entityManager->flush();
 
                 $data = $this->serializer->serialize(
                     [
-                        'success' => false,
-                        'message' => "Votre compte d'artiste a été crée avec succès. Bienvenue dans notre communauté d'artistes.",
+                        'success' => true,
+                        'message' => "Votre compte d'artiste a été crée avec succès. Bienvenue dans notre communauté d'artistes !",
                         "artist_id" => $artist->getIdArtist()
                     ],
                     'json'
