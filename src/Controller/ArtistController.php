@@ -248,8 +248,8 @@ class ArtistController extends AbstractController
 
                 $data = $this->serializer->serialize(
                     [
-                        'success' => false,
-                        'message' => "Votre compte d'artiste a été crée avec succès. Bienvenue dans notre communauté d'artistes.",
+                        'success' => true,
+                        'message' => "Votre compte d'artiste a été crée avec succès. Bienvenue dans notre communauté d'artistes !",
                         "artist_id" => $artist->getIdArtist()
                     ],
                     'json'
