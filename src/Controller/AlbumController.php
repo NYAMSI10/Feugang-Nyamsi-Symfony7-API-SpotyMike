@@ -118,7 +118,7 @@ class AlbumController extends AbstractController
         $allowedParameters = ['currentPage', 'limit', 'nom', 'labe','year','featuring','category'];
         $categoryList = ["rap", "r'n'b", "gospel", "soul", "country", "hip hop", "jazz", "rap", "le Mike"];
 
-        $nom= $fullname= $label = $year = $featuring = $category = null;
+        $nom= $fullname= $label = $year = $featuring = $category = $year = null;
         $current_page = 1;
         $limit = 5;
 
@@ -139,6 +139,7 @@ class AlbumController extends AbstractController
                     'message' => "L'année n'est pas valide.",
                 ], Response::HTTP_BAD_REQUEST);
             }
+            $year = $parameters['year'];
         }
 
         if(isset($parameters['current_page'])) {
