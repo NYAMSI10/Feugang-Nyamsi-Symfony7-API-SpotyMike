@@ -30,7 +30,7 @@ class ArtistController extends AbstractController
     private $validator;
     private $jwtManager;
 
-    public function __construct(EntityManagerInterface $entityManager, SerializerInterface $serializer, ValidatorInterface $validator, JWTTokenManagerInterface $jwtManager, private readonly ParameterBagInterface $parameterBag,private readonly FormatData $formatData)
+    public function __construct(EntityManagerInterface $entityManager, SerializerInterface $serializer, ValidatorInterface $validator, JWTTokenManagerInterface $jwtManager, private readonly ParameterBagInterface $parameterBag, private readonly FormatData $formatData)
     {
         $this->entityManager = $entityManager;
         $this->repository = $entityManager->getRepository(Artist::class);
@@ -44,7 +44,7 @@ class ArtistController extends AbstractController
     public function index(Request $request, string $fullname = 'none'): JsonResponse
     {
         $current_page = $request->get('currentPage');
-        $limit = $request->get('limit',5);
+        $limit = $request->get('limit', 5);
 
         if (isset($current_page)) {
             if ((!is_numeric($current_page)) || ($current_page <= 0) || !$current_page) {
@@ -65,7 +65,7 @@ class ArtistController extends AbstractController
                 ], Response::HTTP_NOT_FOUND);
             }
 
-            $artists_data =  $this->formatData->formatDataArtist($artists,$this->getUser());
+            $artists_data =  $this->formatData->formatDataArtist($artists, $this->getUser());
 
             return $this->json([
                 'error' => false,
@@ -106,7 +106,7 @@ class ArtistController extends AbstractController
                 return new JsonResponse($data, Response::HTTP_NOT_FOUND, [], true);
             }
 
-            $artist_data = $this->formatData->formatDataOneArtist($artist,$this->getUser());
+            $artist_data = $this->formatData->formatDataOneArtist($artist, $this->getUser());
             return $this->json([
                 'error' => false,
                 'artist' => $artist_data,
@@ -137,7 +137,6 @@ class ArtistController extends AbstractController
                         ['error' => true, 'message' => "Le serveur ne peut pas décoder le contenu en base64 en fichier binaire."],
                         'json'
                     );
-
                     return new JsonResponse($data, Response::HTTP_UNPROCESSABLE_ENTITY, [], true);
                 }
                 $explodeData = explode(",", $avatar);
@@ -226,7 +225,7 @@ class ArtistController extends AbstractController
                 $artist->setUserIdUser($user);
                 $artist->setFullname($fullname);
                 // $artist->setLabel($label);
-                if($name)
+                if ($name)
                     $artist->setAvatar($name);
                 $artist->setDescription(isset($description) ? $description : '');
 
@@ -249,7 +248,7 @@ class ArtistController extends AbstractController
                 $data = $this->serializer->serialize(
                     [
                         'success' => true,
-                        'message' => "Votre compte d'artiste a été crée avec succès. Bienvenue dans notre communauté d'artistes !",
+                        'message' => "Votre compte d'artiste a été créé avec succès. Bienvenue dans notre communauté d'artistes !",
                         "artist_id" => $artist->getIdArtist()
                     ],
                     'json'
@@ -343,12 +342,10 @@ class ArtistController extends AbstractController
             $artist->setAvatar($name);
 
             $this->entityManager->persist($artist);
-
             $data = $this->serializer->serialize(
                 ['success' => true, 'message' => "Les informations de l'artiste ont été mises à jour avec succès."],
                 'json'
             );
-
             return new JsonResponse($data, Response::HTTP_OK, [], true);
         }
     }

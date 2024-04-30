@@ -33,11 +33,11 @@ class Album
     #[Groups(["getAlbumArtist"])]
     private ?string $nom = null;
 
-    #[ORM\Column(length: 20)]
-    #[Assert\NotBlank(message: 'category')]
-    #[Assert\NotNull(message: 'category')]
-    #[Groups(["getAlbumArtist"])]
-    private ?string $categ = null;
+    // #[ORM\Column(length: 20)]
+    // #[Assert\NotBlank(message: 'category')]
+    // #[Assert\NotNull(message: 'category')]
+    // #[Groups(["getAlbumArtist"])]
+    // private ?string $categ = null;
 
     #[ORM\Column(length: 125, nullable: true)]
     #[Groups(["getAlbumArtist"])]
@@ -69,6 +69,9 @@ class Album
 
     #[ORM\Column]
     private ?bool $active = true;
+
+    #[ORM\Column(nullable: true)]
+    private ?array $categ = null;
 
     public function __construct()
     {
@@ -105,21 +108,21 @@ class Album
         return $this;
     }
 
-    public function getCateg(): ?string
-    {
-        return $this->categ;
-    }
+    // public function getCateg(): ?string
+    // {
+    //     return $this->categ;
+    // }
 
-    public function setCateg(string $categ): static
-    {
-        $this->categ = $categ;
+    // public function setCateg(string $categ): static
+    // {
+    //     $this->categ = $categ;
 
-        return $this;
-    }
+    //     return $this;
+    // }
 
     public function getCover(): ?string
     {
-        return ($this->cover == null)?'':$this->cover;
+        return ($this->cover == null) ? '' : $this->cover;
     }
 
     public function setCover(?string $cover): static
@@ -216,6 +219,18 @@ class Album
     public function setActive(bool $active): static
     {
         $this->active = $active;
+
+        return $this;
+    }
+
+    public function getCateg(): ?array
+    {
+        return $this->categ;
+    }
+
+    public function setCateg(?array $categ): static
+    {
+        $this->categ = $categ;
 
         return $this;
     }

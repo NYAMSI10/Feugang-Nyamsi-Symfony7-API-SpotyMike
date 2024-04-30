@@ -33,7 +33,7 @@ class AlbumController extends AbstractController
     private $serializer;
     private $validator;
 
-    public function __construct(EntityManagerInterface $entityManager, SerializerInterface $serializer, ValidatorInterface $validator, private readonly ParameterBagInterface $parameterBag,private readonly FormatData $formatData)
+    public function __construct(EntityManagerInterface $entityManager, SerializerInterface $serializer, ValidatorInterface $validator, private readonly ParameterBagInterface $parameterBag, private readonly FormatData $formatData)
     {
         $this->entityManager = $entityManager;
         $this->repository = $entityManager->getRepository(Album::class);
@@ -48,12 +48,12 @@ class AlbumController extends AbstractController
     #[Route('/albums', name: 'album_list', methods: ['GET'])]
     public function index(Request $request): JsonResponse
     {
-        $current_page = $request->get('currentPage', 1);
+        $current_page = $request->get('currentPage');
         $limit = $request->get('limit', 5);
         $check_visibility = 0;
         $user = $this->entityManager->getRepository(User::class)->findOneBy(['email' => $this->getUser()->getUserIdentifier()]);
 
-        if (!(is_numeric($current_page) && $current_page >= 0 && intval($current_page) == $current_page)) {
+        if (!(is_numeric($current_page) && $current_page >= 0 && $current_page)) {
             return $this->json([
                 'error' => true,
                 'message' => 'Le paramètre de pagination invalide. Veuillez fournir un numéro de page valide.',
@@ -66,14 +66,14 @@ class AlbumController extends AbstractController
         $albums = $this->repository->getAllAlbums($current_page, $limit, $check_visibility);
         $nb_items = is_countable($albums) ? count($albums) : 0;
 
-        if ($nb_items == 0) {
+        if (($nb_items == 0) ||  ($current_page > ceil($nb_items / $limit))) {
             return $this->json([
                 'error' => true,
                 'message' => 'Aucun album trouvé pour la page demandée.',
             ], Response::HTTP_NOT_FOUND);
         }
 
-        $albums_data = $this->formatData->formatDataAlbumsWithFeaturings($albums,$this->getUser());
+        $albums_data = $this->formatData->formatDataAlbumsWithFeaturings($albums, $this->getUser());
         return $this->json([
             'error' => false,
             'albums' => $albums_data,
@@ -87,67 +87,114 @@ class AlbumController extends AbstractController
 
 
 
-    #[Route('album/{id}', name: 'album_show', methods: ['GET'])]
-    public function show(Request $request, string $id = null): JsonResponse
+    #[Route('album/{id}', name: 'album_show_or_search', methods: ['GET'])]
+    public function show(Request $request, string $id = 'none'): JsonResponse
     {
 
         $current_page = $request->get('currentPage', 1);
         $limit = $request->get('limit', 5);
         $nom = $request->get('nom');
         $label = $request->get('label');
+        $fullname = $request->get('fullname');
         $year = $request->get('year');
         $featuring = $request->get('featuring');
         $category = $request->get('category');
-        if ($request->get('fullname')) {
-            $fullname = $this->artistRepository->findOneBy(['fullname' => $request->get('fullname')])->getId();
-        } else {
-            $fullname = null;
-        }
         $categoryList = ["rap", "r'n'b", "gospel", "soul", "country", "hip hop", "jazz", "rap", "le Mike"];
-        $check_visibility = 0;
-        $user = $this->entityManager->getRepository(User::class)->findOneBy(['email' => $this->getUser()->getUserIdentifier()]);
-        $id = $request->get('id');
+        $check_visibility = 1;
 
-        if (!isset($id)) {
-            $data = $this->serializer->serialize(
-                ['error' => true, 'message' => "L'id de l'album est obligatoire pour cette requête"],
-                'json'
-            );
-
-            return new JsonResponse($data, Response::HTTP_BAD_REQUEST, [], true);
+        if ($id != 'none') {
+            $album = $this->repository->findOneBy(['idAlbum' => $id]);
+            $album_data = $this->formatData->formatDataAlbumWithFeaturings($album, $this->getUser());
+            return $this->json([
+                'error' => false,
+                'album' => $album_data,
+            ], Response::HTTP_OK);
         }
 
-        if (!in_array('ROLE_ARTIST', $user->getRoles(), true)) {
-            $check_visibility = 1;
-        }
-
-        if (!in_array($category, $categoryList)) {
+        if ((!$nom && !$label && !$year && !$featuring && !$category && !$fullname) && ($id == 'none')) {
             return $this->json([
                 'error' => true,
-                'message' => 'Les categorie ciblée sont invalide.',
-            ], Response::HTTP_BAD_REQUEST);
+                'album' => "L'id de l'album est obligatoire pour cette requête.",
+            ], Response::HTTP_OK);
         }
 
-        $albums = $this->repository->searchAlbum($nom, $fullname, $label, $year, $featuring, $category, $current_page, $limit, $check_visibility);
-        $nb_items = is_countable($albums) ? count($albums) : 0;
+        if ($nom  || $label  || $year  || $featuring  || $category || $fullname) {
 
-        if ($nb_items == 0) {
+            $albums = $this->repository->searchAlbum($nom, $fullname, $label, $year, $featuring, $category, $current_page, $limit, $check_visibility);
+            $nb_items = is_countable($albums) ? count($albums) : 0;
+
+            if ($nb_items == 0) {
+                return $this->json([
+                    'error' => true,
+                    'message' => 'Aucun album trouvé pour la page demandée.',
+                ], Response::HTTP_NOT_FOUND);
+            }
+            $albums_data = $this->formatData->formatDataAlbumsWithFeaturings($albums, $this->getUser());
             return $this->json([
-                'error' => true,
-                'message' => 'Aucun album trouvé pour la page demandée.',
-            ], Response::HTTP_NOT_FOUND);
+                'error' => false,
+                'albums' => $albums_data,
+                'pagination' => [
+                    'current_page' => $current_page,
+                    'totalAlbums' => $nb_items,
+                    'totalPages' => ceil($nb_items / $limit)
+                ]
+            ], Response::HTTP_OK);
         }
 
-        $albums_data = $this->formatData->formatDataAlbumsWithFeaturings($albums,$this->getUser());
-        return $this->json([
-            'error' => false,
-            'albums' => $albums_data,
-            'pagination' => [
-                'current_page' => $current_page,
-                'totalAlbums' => $nb_items,
-                'totalPages' => ceil($nb_items / $limit)
-            ]
-        ], Response::HTTP_OK);
+
+
+
+
+        // if ($request->get('fullname')) {
+        //     $fullname = $this->artistRepository->findOneBy(['fullname' => $request->get('fullname')])->getId();
+        // } else {
+        //     $fullname = null;
+        // }
+        // $categoryList = ["rap", "r'n'b", "gospel", "soul", "country", "hip hop", "jazz", "rap", "le Mike"];
+        // $check_visibility = 0;
+        // $user = $this->entityManager->getRepository(User::class)->findOneBy(['email' => $this->getUser()->getUserIdentifier()]);
+        // $id = $request->get('id');
+
+        // if (!isset($id)) {
+        //     $data = $this->serializer->serialize(
+        //         ['error' => true, 'message' => "L'id de l'album est obligatoire pour cette requête."],
+        //         'json'
+        //     );
+
+        //     return new JsonResponse($data, Response::HTTP_BAD_REQUEST, [], true);
+        // }
+
+        // if (!in_array('ROLE_ARTIST', $user->getRoles(), true)) {
+        //     $check_visibility = 1;
+        // }
+
+        // if (!in_array($category, $categoryList)) {
+        //     return $this->json([
+        //         'error' => true,
+        //         'message' => 'Les categorie ciblée sont invalide.',
+        //     ], Response::HTTP_BAD_REQUEST);
+        // }
+
+        // $albums = $this->repository->searchAlbum($nom, $fullname, $label, $year, $featuring, $category, $current_page, $limit, $check_visibility);
+        // $nb_items = is_countable($albums) ? count($albums) : 0;
+
+        // if ($nb_items == 0) {
+        //     return $this->json([
+        //         'error' => true,
+        //         'message' => 'Aucun album trouvé pour la page demandée.',
+        //     ], Response::HTTP_NOT_FOUND);
+        // }
+
+        // $albums_data = $this->formatData->formatDataAlbumsWithFeaturings($albums, $this->getUser());
+        // return $this->json([
+        //     'error' => false,
+        //     'albums' => $albums_data,
+        //     'pagination' => [
+        //         'current_page' => $current_page,
+        //         'totalAlbums' => $nb_items,
+        //         'totalPages' => ceil($nb_items / $limit)
+        //     ]
+        // ], Response::HTTP_OK);
     }
 
     #[Route('/album', name: 'album_new', methods: 'POST')]
@@ -177,12 +224,13 @@ class AlbumController extends AbstractController
         if ($parameters['visibility'] != 0 && $parameters['visibility'] != 1) {
             return $this->json([
                 'error' => true,
-                'message' => 'La valeur du champ visibility est invalide. Les valeurs autorisés sont 0 pour invisible, 1 pour visible.',
+                'message' => 'La valeur du champ visibility est invalide. Les valeurs autorisées sont 0 pour invisible, 1 pour visible.',
             ], Response::HTTP_BAD_REQUEST);
         }
 
         $decodedData = json_decode($parameters['categorie']);
         $titlepattern = '/^[\p{L}\p{N}\s\p{P}]{1,90}$/u';
+
 
 
         if (!($decodedData !== null && json_last_error() === JSON_ERROR_NONE) || !preg_match($titlepattern, $parameters['title'])) {
@@ -209,18 +257,16 @@ class AlbumController extends AbstractController
                 'message' => 'Ce titre est déjà pris. Veuillez en choisir un autre.',
             ], Response::HTTP_CONFLICT);
         }
-
         $explodeData = explode(",", $parameters['cover']);
         $name = '';
         if (count($explodeData) == 2) {
+            $decodedCover = base64_decode($parameters['cover']);
+            $imageInfo =  strpos($parameters['cover'], 'data:image/') === 0;
 
-            $decodedCover = base64_decode($explodeData[1]);
-            $imageInfo = getimagesizefromstring($decodedCover);
-
-            if ($decodedCover === false || empty($decodedCover) || ($imageInfo === false)) {
+            if ($decodedCover === false || empty($decodedCover) || !($imageInfo)) {
                 return $this->json([
                     'error' => true,
-                    'message' => 'Le serveur ne peut pas décoder le contenu base64 en fichier binaire',
+                    'message' => 'Le serveur ne peut pas décoder le contenu base64 en fichier binaire.',
                 ], Response::HTTP_UNPROCESSABLE_ENTITY);
             }
 
@@ -243,6 +289,7 @@ class AlbumController extends AbstractController
             }
             $imageSizeBytes = strlen($decodedCover);
             $imageSizeMB = $imageSizeBytes / (1024 * 1024);
+
             if (!($imageSizeMB >= 1 && $imageSizeMB <= 7)) {
                 return $this->json([
                     'error' => true,
@@ -260,11 +307,13 @@ class AlbumController extends AbstractController
                 'message' => 'Le serveur ne peut pas décoder le contenu base64 en fichier binaire',
             ], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
+        $category = json_decode($parameters['categorie'], true);
+
 
         $album = new Album();
         $album->setIdAlbum($generateId->randId())
             ->setNom($parameters['title'])
-            ->setCateg($parameters['categorie'])
+            ->setCateg($category)
             ->setVisibility($parameters['visibility'])
             ->setYear(date("Y"))
             ->setArtistUserIdUser($artist)
@@ -293,7 +342,7 @@ class AlbumController extends AbstractController
             ], Response::HTTP_FORBIDDEN);
 
 
-        $allowedParameters = ['categorie', 'title', 'cover', 'visibility'];
+        $allowedParameters = ['visibility', 'cover', 'title', 'categorie'];
         foreach ($parameters as $key => $value) {
             if (!in_array($key, $allowedParameters)) {
                 return $this->json([
@@ -363,7 +412,7 @@ class AlbumController extends AbstractController
                 if ($decodedCover === false || empty($decodedCover) || ($imageInfo === false)) {
                     return $this->json([
                         'error' => true,
-                        'message' => 'Le serveur ne peut pas décoder le contenu base64 en fichier binaire',
+                        'message' => 'Le serveur ne peut pas décoder le contenu base64 en fichier binaire.',
                     ], Response::HTTP_UNPROCESSABLE_ENTITY);
                 }
 
@@ -400,22 +449,24 @@ class AlbumController extends AbstractController
             } else {
                 return $this->json([
                     'error' => true,
-                    'message' => 'Le serveur ne peut pas décoder le contenu base64 en fichier binaire',
+                    'message' => 'Le serveur ne peut pas décoder le contenu base64 en fichier binaire.',
                 ], Response::HTTP_UNPROCESSABLE_ENTITY);
             }
         }
-
+        if ($parameters['categorie']) {
+            $category = json_decode($parameters['categorie'], true);
+        }
 
         $album->setNom(isset($parameters['title']) ? $parameters['title'] : $album->getNom());
-        $album->setCateg(isset($parameters['visibility']) ? $parameters['visibility'] : $album->getCateg());
+        $album->setCateg(isset($parameters['categorie']) ? $category : $album->getCateg());
         $album->setCover(isset($name) ? $name : $album->getCover());
         $album->setVisibility(isset($parameters['visibility']) ? $parameters['visibility'] : $album->isVisibility());
         $this->entityManager->persist($album);
         $this->entityManager->flush();
 
         return $this->json([
-            'message' => 'Album mise à jour avec succès.',
-            'error' =>  false
+            'error' =>  false,
+            'message' => 'Album mise à jour avec succès.'
         ], Response::HTTP_OK);
     }
 

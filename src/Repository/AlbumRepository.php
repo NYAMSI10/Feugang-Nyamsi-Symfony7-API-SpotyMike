@@ -87,8 +87,8 @@ class AlbumRepository extends ServiceEntityRepository
                 ->setParameter('categ', $category);
         }
         if ($fullname) {
-            $qb->andwhere('a.id IN (:fullname)')
-                ->setParameter('fullname', $fullname);
+            $qb->andwhere('a.fullname LIKE :fullname')
+                ->setParameter('fullname', '%' . $fullname . '%');
         }
 
         $qb->orderBy('al.id', 'ASC')
