@@ -131,6 +131,16 @@ class AlbumController extends AbstractController
                 ], Response::HTTP_BAD_REQUEST);
             }
         }
+
+        if(isset($parameters['year'])) {
+            if (!is_numeric($parameters['year']) || strlen($parameters['year']) > 4 || strlen($parameters['year']) < 4) {
+                return $this->json([
+                    'error' => true,
+                    'message' => "L'année n'est pas valide.",
+                ], Response::HTTP_BAD_REQUEST);
+            }
+        }
+
         if(isset($parameters['current_page'])) {
             if (!(is_numeric($parameters['current_page'] && $parameters['current_page'] >= 0 && $parameters['current_page']))) {
                 return $this->json([
