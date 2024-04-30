@@ -177,8 +177,11 @@ class AlbumController extends AbstractController
         $categoryList = ["rap", "r'n'b", "gospel", "soul", "country", "hip hop", "jazz", "rap", "le Mike"];
         $check_visibility = 1;
 
-        if (!is_numeric($year) || count()) {
-            # code...
+        if (!is_numeric($year) || strlen($year) > 4 || strlen($year) < 4) {
+            return $this->json([
+                'error' => true,
+                'message' => "L'année n'est pas valide.",
+            ], Response::HTTP_BAD_REQUEST);
         }
 
         $albums = $this->repository->searchAlbum($nom, $fullname, $label, $year, $featuring, $category, $current_page, $limit, $check_visibility);
