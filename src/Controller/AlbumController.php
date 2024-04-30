@@ -87,20 +87,9 @@ class AlbumController extends AbstractController
 
 
 
-    #[Route('album/{id}', name: 'album_show_or_search', methods: ['GET'])]
+    #[Route('album/{id}', name: 'album_show', methods: ['GET'], requirements: ['id' => '\d+'])]
     public function show(Request $request, string $id = 'none'): JsonResponse
     {
-
-        $current_page = $request->get('currentPage', 1);
-        $limit = $request->get('limit', 5);
-        $nom = $request->get('nom');
-        $label = $request->get('label');
-        $fullname = $request->get('fullname');
-        $year = $request->get('year');
-        $featuring = $request->get('featuring');
-        $category = $request->get('category');
-        $categoryList = ["rap", "r'n'b", "gospel", "soul", "country", "hip hop", "jazz", "rap", "le Mike"];
-        $check_visibility = 1;
 
         if ($id != 'none') {
             $album = $this->repository->findOneBy(['idAlbum' => $id]);
@@ -111,37 +100,12 @@ class AlbumController extends AbstractController
             ], Response::HTTP_OK);
         }
 
-        if ((!$nom && !$label && !$year && !$featuring && !$category && !$fullname) && ($id == 'none')) {
+        if (($id == 'none')) {
             return $this->json([
                 'error' => true,
                 'album' => "L'id de l'album est obligatoire pour cette requête.",
             ], Response::HTTP_OK);
         }
-
-        if ($nom  || $label  || $year  || $featuring  || $category || $fullname) {
-
-            $albums = $this->repository->searchAlbum($nom, $fullname, $label, $year, $featuring, $category, $current_page, $limit, $check_visibility);
-            $nb_items = is_countable($albums) ? count($albums) : 0;
-
-            if ($nb_items == 0) {
-                return $this->json([
-                    'error' => true,
-                    'message' => 'Aucun album trouvé pour la page demandée.',
-                ], Response::HTTP_NOT_FOUND);
-            }
-            $albums_data = $this->formatData->formatDataAlbumsWithFeaturings($albums, $this->getUser());
-            return $this->json([
-                'error' => false,
-                'albums' => $albums_data,
-                'pagination' => [
-                    'current_page' => $current_page,
-                    'totalAlbums' => $nb_items,
-                    'totalPages' => ceil($nb_items / $limit)
-                ]
-            ], Response::HTTP_OK);
-        }
-
-
 
 
 
@@ -197,6 +161,98 @@ class AlbumController extends AbstractController
         // ], Response::HTTP_OK);
     }
 
+
+    #[Route('album/search', name: 'album_search', methods: ['GET'])]
+    public function search(Request $request, string $id = 'none'): JsonResponse
+    {
+
+        $current_page = $request->get('currentPage', 1);
+        $limit = $request->query->get('limit', 5);
+        $nom = $request->query->get('nom');
+        $label = $request->query->get('label');
+        $fullname = $request->query->get('fullname');
+        $year = $request->query->get('year');
+        $featuring = $request->query->get('featuring');
+        $category = $request->query->get('category');
+        $categoryList = ["rap", "r'n'b", "gospel", "soul", "country", "hip hop", "jazz", "rap", "le Mike"];
+        $check_visibility = 1;
+
+        if (!is_numeric($year) || count()) {
+            # code...
+        }
+
+        $albums = $this->repository->searchAlbum($nom, $fullname, $label, $year, $featuring, $category, $current_page, $limit, $check_visibility);
+        $nb_items = is_countable($albums) ? count($albums) : 0;
+
+        if ($nb_items == 0) {
+            return $this->json([
+                'error' => true,
+                'message' => 'Aucun album trouvé pour la page demandée.',
+            ], Response::HTTP_NOT_FOUND);
+        }
+        $albums_data = $this->formatData->formatDataAlbumsWithFeaturings($albums, $this->getUser());
+        return $this->json([
+            'error' => false,
+            'albums' => $albums_data,
+            'pagination' => [
+                'current_page' => $current_page,
+                'totalAlbums' => $nb_items,
+                'totalPages' => ceil($nb_items / $limit)
+            ]
+        ], Response::HTTP_OK);
+
+
+        // if ($request->get('fullname')) {
+        //     $fullname = $this->artistRepository->findOneBy(['fullname' => $request->get('fullname')])->getId();
+        // } else {
+        //     $fullname = null;
+        // }
+        // $categoryList = ["rap", "r'n'b", "gospel", "soul", "country", "hip hop", "jazz", "rap", "le Mike"];
+        // $check_visibility = 0;
+        // $user = $this->entityManager->getRepository(User::class)->findOneBy(['email' => $this->getUser()->getUserIdentifier()]);
+        // $id = $request->get('id');
+
+        // if (!isset($id)) {
+        //     $data = $this->serializer->serialize(
+        //         ['error' => true, 'message' => "L'id de l'album est obligatoire pour cette requête."],
+        //         'json'
+        //     );
+
+        //     return new JsonResponse($data, Response::HTTP_BAD_REQUEST, [], true);
+        // }
+
+        // if (!in_array('ROLE_ARTIST', $user->getRoles(), true)) {
+        //     $check_visibility = 1;
+        // }
+
+        // if (!in_array($category, $categoryList)) {
+        //     return $this->json([
+        //         'error' => true,
+        //         'message' => 'Les categorie ciblée sont invalide.',
+        //     ], Response::HTTP_BAD_REQUEST);
+        // }
+
+        // $albums = $this->repository->searchAlbum($nom, $fullname, $label, $year, $featuring, $category, $current_page, $limit, $check_visibility);
+        // $nb_items = is_countable($albums) ? count($albums) : 0;
+
+        // if ($nb_items == 0) {
+        //     return $this->json([
+        //         'error' => true,
+        //         'message' => 'Aucun album trouvé pour la page demandée.',
+        //     ], Response::HTTP_NOT_FOUND);
+        // }
+
+        // $albums_data = $this->formatData->formatDataAlbumsWithFeaturings($albums, $this->getUser());
+        // return $this->json([
+        //     'error' => false,
+        //     'albums' => $albums_data,
+        //     'pagination' => [
+        //         'current_page' => $current_page,
+        //         'totalAlbums' => $nb_items,
+        //         'totalPages' => ceil($nb_items / $limit)
+        //     ]
+        // ], Response::HTTP_OK);
+    }
     #[Route('/album', name: 'album_new', methods: 'POST')]
     public function new(Request $request, GenerateId $generateId): JsonResponse
     {
