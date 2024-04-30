@@ -78,13 +78,21 @@ class AlbumRepository extends ServiceEntityRepository
             $qb->andwhere('al.nom LIKE :nom')
                 ->setParameter('nom', '%' . $nom . '%');
         }
+        if($label) {
+            $qb->andwhere('al.label LIKE :label')
+                ->setParameter('label', '%' . $label . '%');
+        }
+
         if ($year) {
             $qb->andwhere('al.year =:year')
                 ->setParameter('year', $year);
         }
         if ($category) {
-            $qb->andwhere('al.categ =:categ')
-                ->setParameter('categ', $category);
+            /*$qb->andwhere('al.categ =:categ')
+                ->setParameter('categ', $category);*/
+
+            $qb->andWhere('JSON_CONTAINS(e.jsonField, :element) = 1')
+           ->setParameter('element', json_encode($category));
         }
         if ($fullname) {
             $qb->andwhere('a.fullname LIKE :fullname')
