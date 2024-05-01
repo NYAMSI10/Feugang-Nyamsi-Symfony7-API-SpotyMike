@@ -306,7 +306,7 @@ class FormatData
             'lastname' => $album->getArtistUserIdUser()->getUserIdUser()->getLastname(),
             'fullname' => $album->getArtistUserIdUser()->getFullname(),
             'cover' => ($album->getArtistUserIdUser()->getAvatar() ? $this->parameterBag->get('ArtistImgDir') . '/' . $album->getArtistUserIdUser()->getAvatar() : null),
-            'follower' => count($album->getArtistUserIdUser()->getUserIdUser()->getFollowers()),
+            'follower' => count($album->getArtistUserIdUser()->getUsers()),
             'sexe' =>  $album->getArtistUserIdUser()->getUserIdUser()->getSexe(),
             'dateBirth' => $album->getArtistUserIdUser()->getUserIdUser()->getDateBirth()->format('d-m-Y'),
             'createdAt' => $album->getArtistUserIdUser()->getCreatedAt()->format('Y-m-d')
