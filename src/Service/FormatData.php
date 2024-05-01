@@ -91,7 +91,7 @@ class FormatData
             'lastname' => $artist->getUserIdUser()->getLastname(),
             'fullname' => $artist->getFullname(),
             'avatar' => $this->parameterBag->get('ArtistImgDir') . '/' . $artist->getAvatar(),
-            "follower" => [],
+            "follower" => 0,
             'sexe' =>  $artist->getUserIdUser()->getSexe(),
             'dateBirth' => $artist->getUserIdUser()->getDateBirth()->format('d-m-Y'),
             'Artist.createdAt' => $artist->getCreatedAt()->format('Y-m-d'),
@@ -99,15 +99,11 @@ class FormatData
             'albums' => $this->formatDataAlbums($albums, $user)
         ];
 
-        $tempFollower = [];
+        $nbrFollower = 0;
         $tempFeaturing = [];
 
         foreach ($artist->getUsers() as $follower) {
-            $followerData = [
-                'nom' => $follower->getFirstname() . ' ' . $follower->getLastname(),
-            ];
-
-            $tempFollower[] = $followerData;
+            $nbrFollower+= 1;
         }
 
 
@@ -124,7 +120,7 @@ class FormatData
             $tempFeaturing[] = $featuringData;
         }
         $artistData['featuring'] = $tempFeaturing;
-        $artistData['follower'] = $tempFollower;
+        $artistData['follower'] = $nbrFollower;
 
 
         // $response[] = $artistData;
