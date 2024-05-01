@@ -67,24 +67,38 @@ class AlbumRepository extends ServiceEntityRepository
     public function searchAlbum($nom, $fullname, $label, $year, $featuring, $category, $currentpage, $limit, $checkvisibility)
     {
         $qb = $this->createQueryBuilder('al')
-            ->select('al', 'a')
-            ->join('al.artist_User_idUser', 'a');
+            ->select('al')
+            ->leftJoin('al.artist_User_idUser', 'a')
+            ->leftJoin ('al.songs', 's')
+            ->leftJoin ('s.Artist_idUser', 'featuring');
+
         if ($checkvisibility) {
             $qb->where('al.visibility = :checkvisibility')
                 ->setParameter('checkvisibility', $checkvisibility);
         }
-
         if ($nom) {
             $qb->andwhere('al.nom LIKE :nom')
                 ->setParameter('nom', '%' . $nom . '%');
         }
+        if($label) {
+            $qb->andwhere('al.label LIKE :label')
+                ->setParameter('label', '%' . $label . '%');
+        }
+
         if ($year) {
             $qb->andwhere('al.year =:year')
                 ->setParameter('year', $year);
         }
         if ($category) {
-            $qb->andwhere('al.categ =:categ')
-                ->setParameter('categ', $category);
+            foreach ($category as $cat) {
+                $qb->setParameter('cat', $cat);
+                $conditions[] = 'JSON_CONTAINS(al.categ, JSON_QUOTE(:cat))';
+            }
+            $qb->andWhere(implode(' OR ', $conditions) . " = 1");
+        }
+        if ($featuring) {
+            $qb->where($qb->expr()->in('featuring.fullname', ':fullnames'))
+           ->setParameter('fullnames', $featuring);
         }
         if ($fullname) {
             $qb->andwhere('a.fullname LIKE :fullname')
@@ -95,9 +109,9 @@ class AlbumRepository extends ServiceEntityRepository
             ->distinct()
             ->setFirstResult(($currentpage - 1) * $limit)
             ->setMaxResults($limit);
-        /*->getQuery()
-        ->getResult();
-        dd($qb);*/
+       
+       // dd($qb->getQuery()->getSQL(),$qb->getQuery()->getResult());
+        //dd('ok',$qb->getQuery()->getSQL());
         return new Paginator($qb);
     }
 }

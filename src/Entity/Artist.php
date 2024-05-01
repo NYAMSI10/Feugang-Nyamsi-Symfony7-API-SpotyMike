@@ -34,6 +34,7 @@ class Artist
     #[Assert\Regex(pattern: '/^[a-zA-Z0-9]*$/', message: 'Fullname')]
     #[Groups(["getLogin"])]
     private ?string $fullname = null;
+    
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     #[Groups(["getLogin"])]
     private ?string $description = null;

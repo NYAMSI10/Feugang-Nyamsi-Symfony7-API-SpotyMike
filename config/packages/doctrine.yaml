@@ -27,6 +27,8 @@ doctrine:
         dql:
             string_functions:
                 DATE_FORMAT: DoctrineExtensions\Query\Mysql\DateFormat
+                JSON_CONTAINS: DoctrineExtensions\Query\Mysql\JsonContains
+                JSON_QUOTE: Scienta\DoctrineJsonFunctions\Query\AST\Functions\Mysql\JsonQuote
 
 when@test:
     doctrine:
