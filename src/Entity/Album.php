@@ -70,8 +70,8 @@ class Album
     #[ORM\Column]
     private ?bool $active = true;
 
-    #[ORM\Column(nullable: true)]
-    private ?array $categ = null;
+    #[ORM\Column(type: 'json')]
+    private array $categ = [];
 
     public function __construct()
     {
@@ -225,10 +225,10 @@ class Album
 
     public function getCateg(): ?array
     {
-        return $this->categ;
+        return array_unique($this->categ);
     }
 
-    public function setCateg(?array $categ): static
+    public function setCateg(array $categ): static
     {
         $this->categ = $categ;
 

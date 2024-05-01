@@ -147,7 +147,7 @@ class FormatData
             ];
 
             // Utiliser un tableau temporaire pour stocker les albums sans l'artiste pour éviter les références circulaires
-            $tempAlums = [];
+            $tempAlbums = [];
             foreach ($artist->getAlbums() as $album) {
 
                 $label_id = $this->em->getRepository(ArtistHasLabel::class)->findLabel($artist->getId(), $album->getCreatedAt());
