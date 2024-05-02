@@ -137,7 +137,7 @@ class AlbumController extends AbstractController
                     if (!in_array($element, $categoryList)) {
                         return $this->json([
                             'error' => true,
-                            'message' => 'Les catégorie ciblée sont invalide.',
+                            'message' => 'Les categorie ciblée sont invalide.',
                         ], Response::HTTP_BAD_REQUEST);
                     }
                 }
@@ -206,7 +206,8 @@ class AlbumController extends AbstractController
     public function new(Request $request, GenerateId $generateId): JsonResponse
     {
         $categories = ["rap", "r'n'b", "gospel", "soul", "country", "hip hop", "jazz", "le Mike"];
-        $parameters = $request->request->all();
+        //$parameters = $request->request->all();
+        $parameters = $_POST;
 
         $user = $this->entityManager->getRepository(User::class)->findOneBy(['email' => $this->getUser()->getUserIdentifier()]);
         if (!in_array('ROLE_ARTIST', $user->getRoles(), true))
@@ -214,6 +215,13 @@ class AlbumController extends AbstractController
                 'error' => true,
                 'message' => "Vous n'avez pas l'autorisation pour accèder à cet album.",
             ], Response::HTTP_FORBIDDEN);
+
+        if(!isset($parameters['visibility']) || !isset($parameters['cover']) || !isset($parameters['title']) || !isset($parameters['categorie'])) {
+            return $this->json([
+                'error' => true,
+                'message' => 'Les paramètres fournis sont invalides. Veuillez vérifier les données soumises.',
+            ], Response::HTTP_BAD_REQUEST);
+        }
 
         // Check if there are any parameters other than "label" and "categorie"
         $allowedParameters = ['visibility', 'cover', 'title', 'categorie'];
@@ -226,6 +234,8 @@ class AlbumController extends AbstractController
             }
         }
 
+        
+
         if ($parameters['visibility'] != 0 && $parameters['visibility'] != 1) {
             return $this->json([
                 'error' => true,
@@ -233,10 +243,11 @@ class AlbumController extends AbstractController
             ], Response::HTTP_BAD_REQUEST);
         }
 
-        $decodedData = json_decode($parameters['categorie']);
+        $jsonString = str_replace("'", '"', $parameters['categorie']);
+        $decodedData = json_decode($jsonString);
+
+        
         $titlepattern = '/^[\p{L}\p{N}\s\p{P}]{1,90}$/u';
-
-
 
         if (!($decodedData !== null && json_last_error() === JSON_ERROR_NONE) || !preg_match($titlepattern, $parameters['title'])) {
             return $this->json([
@@ -245,13 +256,13 @@ class AlbumController extends AbstractController
             ], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
-        $missingCategories = array_diff($decodedData, $categories);
-
-        if (!empty($missingCategories)) {
-            return $this->json([
-                'error' => true,
-                'message' => 'Les catégorie ciblée sont invalide.',
-            ], Response::HTTP_BAD_REQUEST);
+        foreach ($decodedData as $element) {
+            if (!in_array($element, $categories)) {
+                return $this->json([
+                    'error' => true,
+                    'message' => 'Les categorie ciblée sont invalide.',
+                ], Response::HTTP_BAD_REQUEST);
+            }
         }
 
         $artist = $user->getArtist();
@@ -262,10 +273,11 @@ class AlbumController extends AbstractController
                 'message' => 'Ce titre est déjà pris. Veuillez en choisir un autre.',
             ], Response::HTTP_CONFLICT);
         }
+
         $explodeData = explode(",", $parameters['cover']);
         $name = '';
         if (count($explodeData) == 2) {
-            $decodedCover = base64_decode($parameters['cover']);
+            $decodedCover = base64_decode($explodeData[1]);
             $imageInfo =  strpos($parameters['cover'], 'data:image/') === 0;
 
             if ($decodedCover === false || empty($decodedCover) || !($imageInfo)) {
@@ -303,22 +315,27 @@ class AlbumController extends AbstractController
             }
 
             $name = uniqid('', true) . '.' . $format;
-            $dest_path = $this->parameterBag->get('AlbumImgDir') . '/' . $name;
+            $directoryPath = $this->parameterBag->get('AlbumImgDir');
+                    if (!is_dir($directoryPath)) {
+                        // If not, create it recursively
+                        mkdir($directoryPath, 0777, true);
+                    }
+            $dest_path = $directoryPath . '/' . $name;
 
+            
             file_put_contents($dest_path, $decodedCover);
         } else {
             return $this->json([
                 'error' => true,
-                'message' => 'Le serveur ne peut pas décoder le contenu base64 en fichier binaire',
+                'message' => 'Le serveur ne peut pas décoder le contenu base64 en fichier binaire.',
             ], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
-        $category = json_decode($parameters['categorie'], true);
 
 
         $album = new Album();
         $album->setIdAlbum($generateId->randId())
             ->setNom($parameters['title'])
-            ->setCateg($category)
+            ->setCateg($decodedData)
             ->setVisibility($parameters['visibility'])
             ->setYear(date("Y"))
             ->setArtistUserIdUser($artist)
@@ -328,9 +345,9 @@ class AlbumController extends AbstractController
         $this->entityManager->flush();
         return $this->json([
             'error' => false,
-            'message' => 'Album créé avec succès',
+            'message' => 'Album créé avec succès.',
             'id' => $album->getIdAlbum()
-        ], Response::HTTP_OK);
+        ], Response::HTTP_CREATED);
     }
 
     #[Route('album/{id}', name: 'album_edit', methods: 'PUT')]
@@ -380,7 +397,7 @@ class AlbumController extends AbstractController
             if (!empty($missingCategories)) {
                 return $this->json([
                     'error' => true,
-                    'message' => 'Les catégorie ciblée sont invalide.',
+                    'message' => 'Les categorie ciblée sont invalide.',
                 ], Response::HTTP_BAD_REQUEST);
             }
         }
@@ -448,7 +465,12 @@ class AlbumController extends AbstractController
                 }
 
                 $name = uniqid('', true) . '.' . $format;
-                $dest_path = $this->parameterBag->get('AlbumImgDir') . '/' . $name;
+                $directoryPath = $this->parameterBag->get('AlbumImgDir');
+                    if (!is_dir($directoryPath)) {
+                        // If not, create it recursively
+                        mkdir($directoryPath, 0777, true);
+                    }
+                $dest_path = $directoryPath . '/' . $name;
 
                 file_put_contents($dest_path, $decodedCover);
             } else {
