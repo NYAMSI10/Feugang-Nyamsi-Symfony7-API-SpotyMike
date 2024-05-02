@@ -296,11 +296,19 @@ class FormatData
             'lastname' => $album->getArtistUserIdUser()->getUserIdUser()->getLastname(),
             'fullname' => $album->getArtistUserIdUser()->getFullname(),
             'cover' => ($album->getArtistUserIdUser()->getAvatar() ? $this->baseUrl . '/images/artists/' . $album->getArtistUserIdUser()->getAvatar() : ''),
-            'follower' => count($album->getArtistUserIdUser()->getUsers()),
+            'follower' => 0,
             'sexe' =>  $album->getArtistUserIdUser()->getUserIdUser()->getSexe(),
             'dateBirth' => $album->getArtistUserIdUser()->getUserIdUser()->getDateBirth()->format('d-m-Y'),
             'createdAt' => $album->getArtistUserIdUser()->getCreatedAt()->format('Y-m-d')
         ];
+
+        $nbrFollower = 0;
+
+        foreach ($album->getArtistUserIdUser()->getUsers() as $follower) {
+            $nbrFollower += 1;
+        }
+
+        $artist['follower'] = $nbrFollower;
 
         $label_id = $this->em->getRepository(ArtistHasLabel::class)->findLabel($album->getArtistUserIdUser()->getId(), $album->getCreatedAt());
 
