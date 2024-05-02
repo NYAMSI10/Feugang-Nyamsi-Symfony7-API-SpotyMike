@@ -90,7 +90,7 @@ class AlbumController extends AbstractController
     #[Route('album/{id}', name: 'album_show', methods: ['GET'])]
     public function getOne(Request $request, string $id = 'none'): JsonResponse
     {
-        if ($id = 'search') {
+        if ($id == 'search') {
             $parameters = $_GET;
             $allowedParameters = ['currentPage', 'limit', 'nom', 'labe', 'year', 'featuring', 'category'];
             $categoryList = ["rap", "r'n'b", "gospel", "soul", "country", "hip hop", "jazz", "rap", "le Mike"];
@@ -161,7 +161,6 @@ class AlbumController extends AbstractController
 
             $albums = $this->repository->searchAlbum($nom, $fullname, $label, $year, $featuring, $category, $current_page, $limit, $check_visibility);
             $nb_items = is_countable($albums) ? count($albums) : 0;
-            //dd('test',$albums);
             if ($nb_items == 0) {
                 return $this->json([
                     'error' => true,
@@ -206,7 +205,6 @@ class AlbumController extends AbstractController
     public function new(Request $request, GenerateId $generateId): JsonResponse
     {
         $categories = ["rap", "r'n'b", "gospel", "soul", "country", "hip hop", "jazz", "le Mike"];
-        //$parameters = $request->request->all();
         $parameters = $_POST;
 
         $user = $this->entityManager->getRepository(User::class)->findOneBy(['email' => $this->getUser()->getUserIdentifier()]);
@@ -216,7 +214,7 @@ class AlbumController extends AbstractController
                 'message' => "Vous n'avez pas l'autorisation pour accèder à cet album.",
             ], Response::HTTP_FORBIDDEN);
 
-        if(!isset($parameters['visibility']) || !isset($parameters['cover']) || !isset($parameters['title']) || !isset($parameters['categorie'])) {
+        if (!isset($parameters['visibility']) || !isset($parameters['cover']) || !isset($parameters['title']) || !isset($parameters['categorie'])) {
             return $this->json([
                 'error' => true,
                 'message' => 'Les paramètres fournis sont invalides. Veuillez vérifier les données soumises.',
@@ -234,7 +232,7 @@ class AlbumController extends AbstractController
             }
         }
 
-        
+
 
         if ($parameters['visibility'] != 0 && $parameters['visibility'] != 1) {
             return $this->json([
@@ -246,7 +244,7 @@ class AlbumController extends AbstractController
         $jsonString = str_replace("'", '"', $parameters['categorie']);
         $decodedData = json_decode($jsonString);
 
-        
+
         $titlepattern = '/^[\p{L}\p{N}\s\p{P}]{1,90}$/u';
 
         if (!($decodedData !== null && json_last_error() === JSON_ERROR_NONE) || !preg_match($titlepattern, $parameters['title'])) {
@@ -316,13 +314,13 @@ class AlbumController extends AbstractController
 
             $name = uniqid('', true) . '.' . $format;
             $directoryPath = $this->parameterBag->get('AlbumImgDir');
-                    if (!is_dir($directoryPath)) {
-                        // If not, create it recursively
-                        mkdir($directoryPath, 0777, true);
-                    }
+            if (!is_dir($directoryPath)) {
+                // If not, create it recursively
+                mkdir($directoryPath, 0777, true);
+            }
             $dest_path = $directoryPath . '/' . $name;
 
-            
+
             file_put_contents($dest_path, $decodedCover);
         } else {
             return $this->json([
@@ -466,10 +464,10 @@ class AlbumController extends AbstractController
 
                 $name = uniqid('', true) . '.' . $format;
                 $directoryPath = $this->parameterBag->get('AlbumImgDir');
-                    if (!is_dir($directoryPath)) {
-                        // If not, create it recursively
-                        mkdir($directoryPath, 0777, true);
-                    }
+                if (!is_dir($directoryPath)) {
+                    // If not, create it recursively
+                    mkdir($directoryPath, 0777, true);
+                }
                 $dest_path = $directoryPath . '/' . $name;
 
                 file_put_contents($dest_path, $decodedCover);
@@ -496,82 +494,4 @@ class AlbumController extends AbstractController
             'message' => 'Album mise à jour avec succès.'
         ], Response::HTTP_OK);
     }
-
-    // #[Route('album/{id}', name: 'album_delete', methods: ['DELETE'])]
-    // public function delete(Request $request, Album $album): JsonResponse
-    // {
-
-    //     $this->entityManager->remove($album);
-    //     $this->entityManager->flush();
-    //     $data = $this->serializer->serialize($album, 'json');
-
-    //     return $this->json([
-    //         'message' => 'Album deleted successfully',
-    //         'data' =>  $album->jsonSerialize()
-    //     ], Response::HTTP_OK);
-    // }
-
-
-    /*public function formatData($albums)
-    {
-        $response = [];
-        foreach ($albums as $album) {
-            $artist = [
-                'firstname' => $album->getArtistUserIdUser()->getUserIdUser()->getFirstname(),
-                'lastname' => $album->getArtistUserIdUser()->getUserIdUser()->getLastname(),
-                'fullname' => $album->getArtistUserIdUser()->getFullname(),
-                'avatar' => $album->getArtistUserIdUser()->getAvatar(),
-                'followers' => count($album->getArtistUserIdUser()->getUserIdUser()->getFollowers()),
-                'sexe' =>  $album->getArtistUserIdUser()->getUserIdUser()->getSexe(),
-                'dateBirth' => $album->getArtistUserIdUser()->getUserIdUser()->getDateBirth()->format('d-m-Y'),
-                'createdAt' => $album->getArtistUserIdUser()->getCreatedAt()->format('Y-m-d')
-            ];
-
-            $label_id = $this->entityManager->getRepository(ArtistHasLabel::class)->findLabel($album->getArtistUserIdUser()->getId(), $album->getCreatedAt());
-
-            $label = $this->entityManager->getRepository(Label::class)->find($label_id['id']);
-
-            $responseAlbum = [
-                'id' => $album->getIdAlbum(),
-                'nom' => $album->getNom(),
-                'categ' => $album->getCateg(),
-                'cover' => $album->getCover(),
-                'year' => $album->getYear(),
-                'label' => $label->getNom(),
-                'createdAt' => $album->getCreatedAt()->format('Y-m-d'),
-                'artist' => $artist,
-                'songs' => [],
-            ];
-
-            foreach ($album->getSongs() as $song) {
-                $songData = [
-                    'id' => $song->getIdSong(),
-                    'title' => $song->getTitle(),
-                    'cover' => $song->getCover(),
-                    'createdAt' => $song->getCreatedAt()->format('Y-m-d'),
-                    'featuring' => []
-                ];
-
-                // Ajoutez les artistes en collaboration pour chaque chanson
-                foreach ($song->getArtistIdUser() as $collaborator) {
-                    $songData['featuring'][] = [
-                        'firstname' => $collaborator->getUserIdUser()->getFirstname(),
-                        'lastname' => $collaborator->getUserIdUser()->getLastname(),
-                        'fullname' => $collaborator->getFullname(),
-                        'avatar' => $collaborator->getAvatar(),
-                        'sexe' =>  $collaborator->getUserIdUser()->getSexe(),
-                        'dateBirth' => $collaborator->getUserIdUser()->getDateBirth()->format('d-m-Y'),
-                        'Artist.createdAt' => $collaborator->getCreatedAt()->format('Y-m-d')
-                    ];
-                }
-
-                $responseAlbum['songs'][] = $songData;
-            }
-
-            $response[] = $responseAlbum;
-        }
-
-
-        return $response;
-    }*/
 }

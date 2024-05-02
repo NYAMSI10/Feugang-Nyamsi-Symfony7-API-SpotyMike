@@ -33,11 +33,7 @@ class Album
     #[Groups(["getAlbumArtist"])]
     private ?string $nom = null;
 
-    // #[ORM\Column(length: 20)]
-    // #[Assert\NotBlank(message: 'category')]
-    // #[Assert\NotNull(message: 'category')]
-    // #[Groups(["getAlbumArtist"])]
-    // private ?string $categ = null;
+
 
     #[ORM\Column(length: 125, nullable: true)]
     #[Groups(["getAlbumArtist"])]
@@ -107,18 +103,6 @@ class Album
 
         return $this;
     }
-
-    // public function getCateg(): ?string
-    // {
-    //     return $this->categ;
-    // }
-
-    // public function setCateg(string $categ): static
-    // {
-    //     $this->categ = $categ;
-
-    //     return $this;
-    // }
 
     public function getCover(): ?string
     {
