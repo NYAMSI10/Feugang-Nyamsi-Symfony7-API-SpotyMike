@@ -113,7 +113,12 @@ class SongController extends AbstractController
 
         
         $name = uniqid('', true) . '.' . ($mime === 'video/mp4' ? 'mp4' : 'wav');
-        $dest_path = $this->parameterBag->get('SongDir') . '/' . $name;
+        $directoryPath = $this->parameterBag->get('SongDir');
+        if (!is_dir($directoryPath)) {
+            // If not, create it recursively
+            mkdir($directoryPath, 0777, true);
+        }
+        $dest_path = $directoryPath . '/' . $name;
     
         file_put_contents($dest_path,$song_data);
 

@@ -317,7 +317,12 @@ class AlbumController extends AbstractController
             }
 
             $name = uniqid('', true) . '.' . $format;
-            $dest_path = $this->parameterBag->get('AlbumImgDir') . '/' . $name;
+            $directoryPath = $this->parameterBag->get('AlbumImgDir');
+                    if (!is_dir($directoryPath)) {
+                        // If not, create it recursively
+                        mkdir($directoryPath, 0777, true);
+                    }
+            $dest_path = $directoryPath . '/' . $name;
 
             
             file_put_contents($dest_path, $decodedCover);
@@ -462,7 +467,12 @@ class AlbumController extends AbstractController
                 }
 
                 $name = uniqid('', true) . '.' . $format;
-                $dest_path = $this->parameterBag->get('AlbumImgDir') . '/' . $name;
+                $directoryPath = $this->parameterBag->get('AlbumImgDir');
+                    if (!is_dir($directoryPath)) {
+                        // If not, create it recursively
+                        mkdir($directoryPath, 0777, true);
+                    }
+                $dest_path = $directoryPath . '/' . $name;
 
                 file_put_contents($dest_path, $decodedCover);
             } else {
