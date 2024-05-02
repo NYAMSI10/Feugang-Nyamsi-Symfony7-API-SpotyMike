@@ -239,6 +239,8 @@ class FormatData
 
         $response = [];
         foreach ($albums as $album) {
+
+
             $artist = [
                 'firstname' => $album->getArtistUserIdUser()->getUserIdUser()->getFirstname(),
                 'lastname' => $album->getArtistUserIdUser()->getUserIdUser()->getLastname(),

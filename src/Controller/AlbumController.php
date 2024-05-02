@@ -56,7 +56,7 @@ class AlbumController extends AbstractController
         if (!(is_numeric($current_page) && $current_page >= 0 && $current_page)) {
             return $this->json([
                 'error' => true,
-                'message' => 'Le paramètre de pagination invalide. Veuillez fournir un numéro de page valide.',
+                'message' => 'Le paramètre de pagination est invalide. Veuillez fournir un numéro de page valide.',
             ], Response::HTTP_BAD_REQUEST);
         }
 
@@ -90,12 +90,12 @@ class AlbumController extends AbstractController
     #[Route('album/{id}', name: 'album_show', methods: ['GET'])]
     public function getOne(Request $request, string $id = 'none'): JsonResponse
     {
-        if($id = 'search') {
+        if ($id = 'search') {
             $parameters = $_GET;
-            $allowedParameters = ['currentPage', 'limit', 'nom', 'labe','year','featuring','category'];
+            $allowedParameters = ['currentPage', 'limit', 'nom', 'labe', 'year', 'featuring', 'category'];
             $categoryList = ["rap", "r'n'b", "gospel", "soul", "country", "hip hop", "jazz", "rap", "le Mike"];
 
-            $nom= $fullname= $label = $year = $featuring = $category = $year = null;
+            $nom = $fullname = $label = $year = $featuring = $category = $year = null;
             $current_page = 1;
             $limit = 5;
 
@@ -109,7 +109,7 @@ class AlbumController extends AbstractController
                 }
             }
 
-            if(isset($parameters['year'])) {
+            if (isset($parameters['year'])) {
                 if (!is_numeric($parameters['year']) || strlen($parameters['year']) > 4 || strlen($parameters['year']) < 4) {
                     return $this->json([
                         'error' => true,
@@ -119,7 +119,7 @@ class AlbumController extends AbstractController
                 $year = $parameters['year'];
             }
 
-            if(isset($parameters['current_page'])) {
+            if (isset($parameters['current_page'])) {
                 if (!(is_numeric($parameters['current_page'] && $parameters['current_page'] >= 0 && $parameters['current_page']))) {
                     return $this->json([
                         'error' => true,
@@ -128,8 +128,8 @@ class AlbumController extends AbstractController
                 }
                 $current_page = $parameters['current_page'];
             }
-            
-            if(isset($parameters['category'])) {
+
+            if (isset($parameters['category'])) {
                 $jsonString = str_replace("'", '"', $parameters['category']);
 
                 $decodedData = json_decode($jsonString);
@@ -141,17 +141,16 @@ class AlbumController extends AbstractController
                         ], Response::HTTP_BAD_REQUEST);
                     }
                 }
-                $category =$decodedData;
-                
+                $category = $decodedData;
             }
 
-            if(isset($parameters['featuring'])) {
+            if (isset($parameters['featuring'])) {
                 $jsonString = str_replace("'", '"', $parameters['featuring']);
 
                 $decodedFeaturing = json_decode($jsonString);
                 foreach ($decodedFeaturing as $element) {
-                    $artist = $this->entityManager->getRepository(Artist::class)->findOneBy(['fullname' =>$element]);
-                    if(!$artist)
+                    $artist = $this->entityManager->getRepository(Artist::class)->findOneBy(['fullname' => $element]);
+                    if (!$artist)
                         return $this->json([
                             'error' => true,
                             'message' => 'Les featuring ciblée sont invalide.',
@@ -199,10 +198,9 @@ class AlbumController extends AbstractController
                 'album' => $album_data,
             ], Response::HTTP_OK);
         }
-        
     }
 
-    
+
 
     #[Route('/album', name: 'album_new', methods: 'POST')]
     public function new(Request $request, GenerateId $generateId): JsonResponse
