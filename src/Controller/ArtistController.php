@@ -166,7 +166,13 @@ class ArtistController extends AbstractController
                     $file = base64_decode($explodeData[1]);
                     $format = explode(";", $fileType)[0];
                     $name = uniqid('', true) . '.' . $format;
-                    $dest_path = $this->getParameter('ArtistImgDir') . '/' . $name;
+
+                    $directoryPath = $this->getParameter('ArtistImgDir');
+                    if (!is_dir($directoryPath)) {
+                        // If not, create it recursively
+                        mkdir($directoryPath, 0777, true);
+                    }
+                    $dest_path = $directoryPath . '/' . $name;
                     file_put_contents($dest_path, $file);
                 }
             };
@@ -325,7 +331,13 @@ class ArtistController extends AbstractController
                     }
 
                     $name = uniqid('', true) . '.' . $format;
-                    $dest_path = $this->parameterBag->get('ArtistImgDir') . '/' . $name;
+
+                    $directoryPath = $this->getParameter('ArtistImgDir');
+                    if (!is_dir($directoryPath)) {
+                        // If not, create it recursively
+                        mkdir($directoryPath, 0777, true);
+                    }
+                    $dest_path = $directoryPath . '/' . $name;
 
                     file_put_contents($dest_path, $decodedCover);
                 } else {
