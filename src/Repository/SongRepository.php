@@ -46,16 +46,26 @@ class SongRepository extends ServiceEntityRepository
     //        ;
     //    }
 
-    public function findByVisibilityAndArtist($artist,$check_visibility=false)
+    public function findByVisibilityAndArtist($artist, $check_visibility = false)
     {
         $qb = $this->createQueryBuilder('s');
         $qb->join('s.Artist_idUser', 'a')
-           ->where("a = :artist")
-           ->setParameter('artist', $artist) ;
+            ->where("a = :artist")
+            ->setParameter('artist', $artist);
 
-        if($check_visibility) {
+        if ($check_visibility) {
             $qb->andWhere('s.visibility = true');
         }
         return $qb->getQuery()->getResult();
+    }
+    public function findByVisibilityAndAlbums($id)
+    {
+        return $this->createQueryBuilder('s')
+            ->select('s')
+            ->andWhere('s.id = :id')
+            ->andWhere('s.visibility = 1')
+            ->setParameter('id', $id)
+            ->getQuery()
+            ->getResult();
     }
 }

@@ -34,20 +34,12 @@ class Artist
     #[Assert\Regex(pattern: '/^[a-zA-Z0-9]*$/', message: 'Fullname')]
     #[Groups(["getLogin"])]
     private ?string $fullname = null;
-
-
-    // #[ORM\Column(length: 90)]
-    // #[Assert\NotBlank(message: 'label')]
-    // #[Assert\NotNull(message: 'label')]
-    // private ?string $label = null;
-
-
+    
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     #[Groups(["getLogin"])]
     private ?string $description = null;
 
 
-    #[Groups(["getArtists"])]
     #[ORM\ManyToMany(targetEntity: Song::class, mappedBy: 'Artist_idUser', cascade: ['persist', 'remove'])]
     private Collection $songs;
 
@@ -55,7 +47,7 @@ class Artist
     #[ORM\OneToMany(targetEntity: Album::class, mappedBy: 'artist_User_idUser', cascade: ['persist', 'remove'])]
     private Collection $albums;
 
-    #[Groups(["getArtist", "getLogin"])]
+    #[Groups(["getLogin"])]
     #[SerializedName('Artist.createdAt')]
     #[ORM\Column(type: Types::DATETIME_MUTABLE)]
     #[Context([DateTimeNormalizer::FORMAT_KEY => 'Y-m-d'])]
@@ -69,6 +61,12 @@ class Artist
 
     #[ORM\Column]
     private ?bool $active = true;
+
+    #[ORM\Column(length: 150, nullable: true)]
+    private ?string $avatar = null;
+
+    #[ORM\Column(length: 90, nullable: true)]
+    private ?string $idArtist = null;
 
 
 
@@ -277,6 +275,31 @@ class Artist
     public function setActive(bool $active): static
     {
         $this->active = $active;
+
+        return $this;
+    }
+
+    public function getAvatar(): ?string
+    {
+        
+        return ($this->avatar == null)?'':$this->avatar;
+    }
+
+    public function setAvatar(?string $avatar): static
+    {
+        $this->avatar = $avatar;
+
+        return $this;
+    }
+
+    public function getIdArtist(): ?string
+    {
+        return $this->idArtist;
+    }
+
+    public function setIdArtist(string $idArtist): static
+    {
+        $this->idArtist = $idArtist;
 
         return $this;
     }

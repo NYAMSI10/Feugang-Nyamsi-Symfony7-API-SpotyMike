@@ -6,6 +6,7 @@ use App\Repository\LabelRepository;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Serializer\Annotation\Groups;
 
 #[ORM\Entity(repositoryClass: LabelRepository::class)]
 class Label
@@ -15,7 +16,11 @@ class Label
     #[ORM\Column]
     private ?int $id = null;
 
+    #[ORM\Column(length: 90, unique: true)]
+    private ?string $idLabel = null;
+
     #[ORM\Column(length: 50)]
+    #[Groups(["getAlbums"])]
     private ?string $nom = null;
 
     #[ORM\OneToMany(targetEntity: ArtistHasLabel::class, mappedBy: 'idLabel')]
@@ -26,12 +31,21 @@ class Label
         $this->artistHasLabels = new ArrayCollection();
     }
 
-
     public function getId(): ?int
     {
         return $this->id;
     }
+    public function getIdLabel(): ?string
+    {
+        return $this->idLabel;
+    }
 
+    public function setIdLabel(string $idLabel): static
+    {
+        $this->idLabel = $idLabel;
+
+        return $this;
+    }
     public function getNom(): ?string
     {
         return $this->nom;

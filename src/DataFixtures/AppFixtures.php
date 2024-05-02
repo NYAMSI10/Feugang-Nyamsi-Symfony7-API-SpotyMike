@@ -31,10 +31,11 @@ class AppFixtures extends Fixture
         for ($i = 0; $i < 3; $i++) {
             $label = new Label();
             $label->setNom("Label_" . rand(0, 999));
+            $label->setIdLabel(uniqid());
             $manager->persist($label);
         }
         $manager->flush();
-        
+
         // Création d'un user "normal"
         $user = new User();
         $user->setIdUser("User_" . rand(0, 999));
@@ -46,7 +47,7 @@ class AppFixtures extends Fixture
         $user->setRoles(["ROLE_USER"]);
         $user->setCreatedAt(new \DateTimeImmutable());
         $user->setUpdatedAt(new \DateTimeImmutable());
-        $user->setPassword($this->userPasswordHasher->hashPassword($user,'Admin2024@'));
+        $user->setPassword($this->userPasswordHasher->hashPassword($user, 'Admin2024@'));
         $manager->persist($user);
 
 
@@ -57,13 +58,13 @@ class AppFixtures extends Fixture
         $userArtist->setLastname("Brice");
         $userArtist->setDateBirth(new \DateTime("10-05-1992"));
         $userArtist->setSexe("Masculin");
-        $userArtist->setRoles(["ROLE_ARTIST","ROLE_USER"]);
+        $userArtist->setRoles(["ROLE_ARTIST", "ROLE_USER"]);
         $userArtist->setCreatedAt(new \DateTimeImmutable());
         $userArtist->setUpdatedAt(new \DateTimeImmutable());
         $userArtist->setPassword($this->userPasswordHasher->hashPassword($userArtist, "Password20#"));
         $manager->persist($userArtist);
 
-        
+
 
         //Création d'un artist
         $artist = new Artist();

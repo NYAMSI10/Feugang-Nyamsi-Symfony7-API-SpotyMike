@@ -23,48 +23,55 @@ class Album
     private ?int $id = null;
 
     #[ORM\Column(length: 90)]
-    #[Groups(["getAlbums","getAlbumArtist"])]
+    #[Groups(["getAlbumArtist"])]
     #[SerializedName('id')]
     private ?string $idAlbum = null;
 
     #[ORM\Column(length: 90)]
     #[Assert\NotBlank(message: 'nom')]
     #[Assert\NotNull(message: 'nom')]
-    #[Groups(["getAlbums","getAlbumArtist"])]
+    #[Groups(["getAlbumArtist"])]
     private ?string $nom = null;
 
-    #[ORM\Column(length: 20)]
-    #[Assert\NotBlank(message: 'category')]
-    #[Assert\NotNull(message: 'category')]
-    #[Groups(["getAlbums","getAlbumArtist"])]
-    private ?string $categ = null;
+    // #[ORM\Column(length: 20)]
+    // #[Assert\NotBlank(message: 'category')]
+    // #[Assert\NotNull(message: 'category')]
+    // #[Groups(["getAlbumArtist"])]
+    // private ?string $categ = null;
 
     #[ORM\Column(length: 125, nullable: true)]
-    #[Groups(["getAlbums","getAlbumArtist"])]
+    #[Groups(["getAlbumArtist"])]
     private ?string $cover = null;
 
     #[ORM\Column]
-    #[Groups(["getAlbums","getAlbumArtist"])]
+    #[Groups(["getAlbumArtist"])]
     #[Assert\Type(
         type: 'integer',
         message: 'year',
     )]
     private ?int $year = 2024;
+    #[Context([DateTimeNormalizer::FORMAT_KEY => ' Y-m-d'])]
+    #[ORM\Column(type: Types::DATETIME_MUTABLE)]
+    #[Groups(["getAlbumArtist"])]
+    private ?\DateTimeInterface $createdAt = null;
 
     #[ORM\ManyToOne(inversedBy: 'albums')]
+    #[SerializedName('artist')]
     private ?Artist $artist_User_idUser = null;
 
     #[ORM\OneToMany(targetEntity: Song::class, mappedBy: 'album', cascade: ['persist', 'remove'])]
-    #[Groups(["getAlbums"])]
     private Collection $songs;
 
-    #[Context([DateTimeNormalizer::FORMAT_KEY =>' d-m-Y'])]
-    #[ORM\Column(type: Types::DATETIME_MUTABLE)]
-    #[Groups(["getAlbums","getAlbumArtist"])]
-    private ?\DateTimeInterface $createdAt = null;
+
 
     #[ORM\Column]
     private ?bool $visibility = true;
+
+    #[ORM\Column]
+    private ?bool $active = true;
+
+    #[ORM\Column(type: 'json')]
+    private array $categ = [];
 
     public function __construct()
     {
@@ -101,21 +108,21 @@ class Album
         return $this;
     }
 
-    public function getCateg(): ?string
-    {
-        return $this->categ;
-    }
+    // public function getCateg(): ?string
+    // {
+    //     return $this->categ;
+    // }
 
-    public function setCateg(string $categ): static
-    {
-        $this->categ = $categ;
+    // public function setCateg(string $categ): static
+    // {
+    //     $this->categ = $categ;
 
-        return $this;
-    }
+    //     return $this;
+    // }
 
     public function getCover(): ?string
     {
-        return $this->cover;
+        return ($this->cover == null) ? '' : $this->cover;
     }
 
     public function setCover(?string $cover): static
@@ -200,6 +207,30 @@ class Album
     public function setVisibility(bool $visibility): static
     {
         $this->visibility = $visibility;
+
+        return $this;
+    }
+
+    public function isActive(): ?bool
+    {
+        return $this->active;
+    }
+
+    public function setActive(bool $active): static
+    {
+        $this->active = $active;
+
+        return $this;
+    }
+
+    public function getCateg(): ?array
+    {
+        return array_unique($this->categ);
+    }
+
+    public function setCateg(array $categ): static
+    {
+        $this->categ = $categ;
 
         return $this;
     }

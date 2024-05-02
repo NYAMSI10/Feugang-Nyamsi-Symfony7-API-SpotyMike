@@ -57,6 +57,9 @@ class Song
     #[Context([DateTimeNormalizer::FORMAT_KEY => ' Y-m-d'])]
     private ?\DateTimeInterface $createdAt = null;
 
+    #[ORM\Column]
+    private ?bool $active = true;
+
     public function __construct()
     {
         $this->Artist_idUser = new ArrayCollection();
@@ -106,7 +109,8 @@ class Song
 
     public function getCover(): ?string
     {
-        return $this->cover;
+        return ($this->cover == null)?'':$this->cover;
+
     }
 
     public function setCover(string $cover): static
@@ -184,6 +188,18 @@ class Song
     public function setCreatedAt(\DateTimeInterface $createdAt): static
     {
         $this->createdAt = $createdAt;
+
+        return $this;
+    }
+
+    public function isActive(): ?bool
+    {
+        return $this->active;
+    }
+
+    public function setActive(bool $active): static
+    {
+        $this->active = $active;
 
         return $this;
     }
