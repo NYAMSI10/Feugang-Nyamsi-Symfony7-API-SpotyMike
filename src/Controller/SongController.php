@@ -18,6 +18,7 @@ use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
+use Symfony\Component\HttpFoundation\File\File;
 
 class SongController extends AbstractController
 {
@@ -68,6 +69,52 @@ class SongController extends AbstractController
         }
     }
 
+    
+    #[Route('stream/{id}', name: 'app_detail_song', methods: ['GET'])]
+    public function streamSong(Request $request, int $id = 0): Response
+    {
+        
+        $song = $this->repository->find($id);
+        $directoryPath = $this->parameterBag->get('SongDir');
+
+        $filePath = $directoryPath = $directoryPath . '/' . $song->getUrl();
+        $file = new File($filePath);
+        $fileSize = $file->getSize();
+        $range = $request->headers->get('Range');
+
+        $response = new Response();
+
+        if ($range) {
+            list($unit, $range) = explode('=', $range, 2);
+            if ($unit == 'bytes') {
+                list($range) = explode(',', $range, 2);
+                list($start, $end) = explode('-', $range);
+                $start = intval($start);
+                $end = $end ? intval($end) : $fileSize - 1;
+                $length = $end - $start + 1;
+
+                $response->headers->set('Content-Range', "bytes $start-$end/$fileSize");
+                $response->headers->set('Content-Length', $length);
+                $response->headers->set('Accept-Ranges', 'bytes');
+                $response->headers->set('Content-Type', 'audio/mpeg');
+                $response->setStatusCode(206);
+                
+                $handle = fopen($filePath, 'rb');
+                fseek($handle, $start);
+                $content = fread($handle, $length);
+                fclose($handle);
+                $response->setContent($content);
+            }
+        } else {
+            $response->headers->set('Content-Length', $fileSize);
+            $response->headers->set('Content-Type', 'audio/mpeg');
+            $response->setContent(file_get_contents($filePath));
+        }
+
+        return $response;
+    }
+
+
     #[Route('/album/{id}/song', name: 'app_create_song', methods: ['POST'])]
     public function create(Request $request,String $id, AlbumRepository $albumRepository, ArtistRepository $artistRepository, GenerateId $generateId): JsonResponse
     {
@@ -93,7 +140,9 @@ class SongController extends AbstractController
         $finfo = finfo_open(FILEINFO_MIME_TYPE);
         $mime = finfo_buffer($finfo, $song_data);
         finfo_close($finfo);
-        if (empty($song_data) || !in_array($mime, ['video/mp4', 'audio/wav'])) {
+        //dd($mime);
+        if (empty($song_data) || !in_array($mime, ['audio/mp3', 'audio/wav','audio/mpeg'])) {
+        
             return $this->json([
                 'error' => true,
                 'message' => "Erreur sur le format du fichier qui n'est pas pris en compte.",
@@ -112,7 +161,7 @@ class SongController extends AbstractController
         }
 
         
-        $name = uniqid('', true) . '.' . ($mime === 'video/mp4' ? 'mp4' : 'wav');
+        $name = uniqid('', true) . '.' . ($mime === 'audio/mp3' ? 'mp3' : 'wav');
         $directoryPath = $this->parameterBag->get('SongDir');
         if (!is_dir($directoryPath)) {
             // If not, create it recursively
