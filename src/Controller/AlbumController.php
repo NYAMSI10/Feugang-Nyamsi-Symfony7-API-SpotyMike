@@ -214,7 +214,8 @@ class AlbumController extends AbstractController
             'error' => false,
             'album' => $album->getCover(),
         ], Response::HTTP_OK);*/
-        return new Response($album->getCover());
+        $directoryPath = $this->parameterBag->get('AlbumImgDir');
+        return new Response($directoryPath . '/' . $album->getCover());
        
     }
 
