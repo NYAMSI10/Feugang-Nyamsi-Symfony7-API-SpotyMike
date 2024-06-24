@@ -41,6 +41,7 @@ security:
     - { path: ^/register, roles: PUBLIC_ACCESS }
     - { path: ^/refresh, roles: PUBLIC_ACCESS }
     - { path: ^/stream, roles: PUBLIC_ACCESS }
+    - { path: ^/album/image, roles: PUBLIC_ACCESS }
     - { path: ^/song, roles: PUBLIC_ACCESS }
     - { path: ^/, roles: IS_AUTHENTICATED_FULLY }
     - { path: ^/$, roles: PUBLIC_ACCESS }

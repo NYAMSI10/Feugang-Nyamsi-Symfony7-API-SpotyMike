@@ -194,12 +194,12 @@ class SongController extends AbstractController
     {
         $song = $this->repository->find($song);
         $song->setTitle($request->get('title'))
-            ->setUrl($request->get('url'))
-            ->setCover($request->get('cover'))
-            ->setVisibility($request->get('visibility'))
-            ->addArtistIdUser($artistRepository->find($request->get('idartistuser')))
-            ->setAlbum($albumRepository->find($request->get('idalbum')))
-            ->setPlaylistHasSong($playlistHasSongRepository->find($request->get('idplaylisthassong')));
+            //->setUrl($request->get('url'))
+            ->setCover($request->get('cover'));
+            //->setVisibility($request->get('visibility'))
+            //->addArtistIdUser($artistRepository->find($request->get('idartistuser')))
+            //->setAlbum($albumRepository->find($request->get('idalbum')))
+            //->setPlaylistHasSong($playlistHasSongRepository->find($request->get('idplaylisthassong')));
 
         $this->entityManager->persist($song);
         $this->entityManager->flush();
