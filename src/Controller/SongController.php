@@ -73,8 +73,8 @@ class SongController extends AbstractController
     #[Route('stream/{id}', name: 'app_detail_song', methods: ['GET'])]
     public function streamSong(Request $request, int $id = 0): Response
     {
-        
-        $song = $this->repository->find($id);
+
+        $song = $this->repository->findOneBy(['idSong' =>$id]);
         $directoryPath = $this->parameterBag->get('SongDir');
 
         $filePath = $directoryPath = $directoryPath . '/' . $song->getUrl();
