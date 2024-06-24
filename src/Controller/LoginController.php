@@ -7,6 +7,8 @@ use App\Entity\User;
 use App\Service\FormatData;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\EntityManagerInterface;
+use Gesdinet\JWTRefreshTokenBundle\Doctrine\RefreshTokenManager as DoctrineRefreshTokenManager;
+use Gesdinet\JWTRefreshTokenBundle\Model\RefreshTokenManagerInterface;
 use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTTokenManagerInterface;
 use Namshi\JOSE\JWT;
 use Psr\Cache\CacheItemPoolInterface;
@@ -28,6 +30,7 @@ class LoginController extends AbstractController
     private $cache;
     private $passwordHasher;
     private $jwtProvider;
+    private $refreshTokenManager;
 
 
     public function __construct(EntityManagerInterface $entityManager, UserPasswordHasherInterface $userPasswordHasherInterface, JWTTokenManagerInterface $jwtManager, SerializerInterface $serializer, CacheItemPoolInterface $cache, JWSProviderInterface $jwtProvider,private readonly FormatData $formatData)
@@ -161,7 +164,7 @@ class LoginController extends AbstractController
                 'error' => false,
                 'message' => "L'utilisateur a été authentifié avec succès",
                 'user' => $user_data,
-                'token' => $token
+                'token' => $token,
             ],
             'json'
         );
