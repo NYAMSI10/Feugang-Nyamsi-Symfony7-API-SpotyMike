@@ -199,6 +199,24 @@ class AlbumController extends AbstractController
         }
     }
 
+    #[Route('album/image/{id}', name: 'album_show', methods: ['GET'])]
+    public function getAlbumImage(Request $request, string $id = 'none'): Response
+    {
+        $album = $this->repository->findOneBy(['idAlbum' => $id]);
+        if (!$album) {
+            return $this->json([
+                'error' => true,
+                'message' => "L'album non trouvé. Vérifiez les informations fournies et réessayez.",
+            ], Response::HTTP_NOT_FOUND);
+        }
+        
+       /* return $this->json([
+            'error' => false,
+            'album' => $album->getCover(),
+        ], Response::HTTP_OK);*/
+        return new Response($album->getCover());
+       
+    }
 
 
     #[Route('/album', name: 'album_new', methods: 'POST')]
