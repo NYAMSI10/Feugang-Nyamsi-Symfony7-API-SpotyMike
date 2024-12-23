@@ -1,0 +1,14 @@
+# config/packages/nelmio_cors.yaml
+nelmio_cors:
+  defaults:
+    allow_credentials: false
+    allow_origin: ["http://localhost:8100"]
+    allow_headers: ["content-type", "authorization"]
+    allow_methods: ["GET", "OPTIONS", "POST", "PUT", "DELETE"]
+    max_age: 3600
+  paths:
+    "^/": # autoriser toutes les routes
+      allow_origin: ["http://localhost:8100"]
+      allow_headers: ["content-type", "authorization"]
+      allow_methods: ["GET", "OPTIONS", "POST", "PUT", "DELETE"]
+      max_age: 3600

@@ -30,7 +30,7 @@ class LoginController extends AbstractController
     private $jwtProvider;
 
 
-    public function __construct(EntityManagerInterface $entityManager, UserPasswordHasherInterface $userPasswordHasherInterface, JWTTokenManagerInterface $jwtManager, SerializerInterface $serializer, CacheItemPoolInterface $cache, JWSProviderInterface $jwtProvider,private readonly FormatData $formatData)
+    public function __construct(EntityManagerInterface $entityManager, UserPasswordHasherInterface $userPasswordHasherInterface, JWTTokenManagerInterface $jwtManager, SerializerInterface $serializer, CacheItemPoolInterface $cache, JWSProviderInterface $jwtProvider, private readonly FormatData $formatData)
     {
         $this->entityManager = $entityManager;
         $this->repository = $entityManager->getRepository(User::class);
@@ -45,6 +45,7 @@ class LoginController extends AbstractController
     public function login(Request $request, UserPasswordHasherInterface $passwordHasher): JsonResponse
     {
         $email = $request->get('email');
+        dd($email);
         $password = $request->get('password');
         $email_pattern = '/^[a-zA-Z0-9._%+\-—]+@[a-zA-Z0-9.\-—]+\.[a-zA-Z]{2,}$/';
 
@@ -140,7 +141,7 @@ class LoginController extends AbstractController
         }
         $artist = [];
         if ($user->getArtist()) {
-            $artist = $this->formatData->formatDataOneArtist($user->getArtist(),$user);
+            $artist = $this->formatData->formatDataOneArtist($user->getArtist(), $user);
         }
         $user_data = [
             "firstname" => $user->getFirstname(),
@@ -151,7 +152,7 @@ class LoginController extends AbstractController
             "email" => $user->getEmail(),
             "tel" => $user->getTel(),
             "artist" => $artist,
-            
+
         ];
 
 
